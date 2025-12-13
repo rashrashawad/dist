@@ -1,0 +1,751 @@
+<!-- ✅ مثال على استخدام نظام الحفظ الدائم -->
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مدير التخزين الدائم - Persistent Storage Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.active {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .upload-area p {
+            color: #666;
+            margin: 10px 0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-input {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .file-input:hover {
+            background: #764ba2;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ee5a52;
+        }
+
+        .btn-success {
+            background: #51cf66;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #40c057;
+        }
+
+        .file-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .file-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .preview {
+            margin-top: 20px;
+            max-width: 300px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .preview img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .preview audio {
+            width: 100%;
+        }
+
+        .status {
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 15px;
+            }
+
+            .section {
+                margin-bottom: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🗄️ مدير التخزين الدائم</h1>
+            <p>حفظ واسترجاع الصور والأصوات والخلفيات بسهولة</p>
+        </div>
+
+        <div class="content">
+            <!-- قسم الصور -->
+            <div class="section">
+                <h2>📸 إدارة الصور</h2>
+                
+                <div class="upload-area" id="imageUploadArea">
+                    <p>🖼️ اسحب الصورة هنا أو اضغط للاختيار</p>
+                    <input type="file" id="imageInput" accept="image/*">
+                    <button class="file-input">اختر صورة</button>
+                </div>
+
+                <div id="imagePreview" class="preview" style="display: none;">
+                    <img id="imagePreviewImg" alt="معاينة">
+                </div>
+
+                <div id="imageStatus"></div>
+
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="loadImagesFromStorage()">📂 تحميل الصور المحفوظة</button>
+                    <button class="btn btn-danger" onclick="clearAllImages()">🗑️ حذف جميع الصور</button>
+                </div>
+
+                <div id="imagesList"></div>
+            </div>
+
+            <!-- قسم الأصوات -->
+            <div class="section">
+                <h2>🔊 إدارة الأصوات</h2>
+                
+                <div class="upload-area" id="soundUploadArea">
+                    <p>🎵 اسحب الصوت هنا أو اضغط للاختيار</p>
+                    <input type="file" id="soundInput" accept="audio/*">
+                    <button class="file-input">اختر صوت</button>
+                </div>
+
+                <div id="soundPreview" class="preview" style="display: none;">
+                    <audio id="soundPreviewAudio" controls></audio>
+                </div>
+
+                <div id="soundStatus"></div>
+
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="loadSoundsFromStorage()">📂 تحميل الأصوات المحفوظة</button>
+                    <button class="btn btn-danger" onclick="clearAllSounds()">🗑️ حذف جميع الأصوات</button>
+                </div>
+
+                <div id="soundsList"></div>
+            </div>
+
+            <!-- قسم الخلفيات -->
+            <div class="section">
+                <h2>🎨 إدارة الخلفيات</h2>
+                
+                <div class="upload-area" id="backgroundUploadArea">
+                    <p>🖼️ اسحب الخلفية هنا أو اضغط للاختيار</p>
+                    <input type="file" id="backgroundInput" accept="image/*">
+                    <button class="file-input">اختر خلفية</button>
+                </div>
+
+                <div id="backgroundPreview" class="preview" style="display: none;">
+                    <img id="backgroundPreviewImg" alt="معاينة">
+                </div>
+
+                <div id="backgroundStatus"></div>
+
+                <div class="button-group">
+                    <button class="btn btn-success" onclick="loadBackgroundsFromStorage()">📂 تحميل الخلفيات المحفوظة</button>
+                    <button class="btn btn-danger" onclick="clearAllBackgrounds()">🗑️ حذف جميع الخلفيات</button>
+                </div>
+
+                <div id="backgroundsList"></div>
+            </div>
+
+            <!-- إحصائيات -->
+            <div class="section">
+                <h2>📊 إحصائيات التخزين</h2>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="showStorageStats()">📈 عرض الإحصائيات</button>
+                    <button class="btn btn-danger" onclick="clearAllData()">🗑️ حذف كل شيء</button>
+                </div>
+                <div id="statsContainer" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- تحميل مكتبات التخزين -->
+    <script src="src/storage.js"></script>
+    <script src="src/fileUploadManager.js"></script>
+
+    <script>
+        // تهيئة عند التحميل
+        document.addEventListener('DOMContentLoaded', initializeApp);
+
+        async function initializeApp() {
+            console.log('🚀 تهيئة التطبيق...');
+            
+            // انتظر تهيئة قاعدة البيانات
+            await new Promise(resolve => {
+                const checkDB = setInterval(() => {
+                    if (storage.db) {
+                        clearInterval(checkDB);
+                        resolve();
+                    }
+                }, 100);
+            });
+
+            setupEventListeners();
+            console.log('✅ تم تهيئة التطبيق بنجاح');
+        }
+
+        function setupEventListeners() {
+            // الصور
+            document.getElementById('imageUploadArea').addEventListener('click', () => {
+                document.getElementById('imageInput').click();
+            });
+            document.getElementById('imageUploadArea').addEventListener('dragover', handleDragOver);
+            document.getElementById('imageUploadArea').addEventListener('drop', (e) => handleImageDrop(e));
+            document.getElementById('imageInput').addEventListener('change', handleImageChange);
+
+            // الأصوات
+            document.getElementById('soundUploadArea').addEventListener('click', () => {
+                document.getElementById('soundInput').click();
+            });
+            document.getElementById('soundUploadArea').addEventListener('dragover', handleDragOver);
+            document.getElementById('soundUploadArea').addEventListener('drop', (e) => handleSoundDrop(e));
+            document.getElementById('soundInput').addEventListener('change', handleSoundChange);
+
+            // الخلفيات
+            document.getElementById('backgroundUploadArea').addEventListener('click', () => {
+                document.getElementById('backgroundInput').click();
+            });
+            document.getElementById('backgroundUploadArea').addEventListener('dragover', handleDragOver);
+            document.getElementById('backgroundUploadArea').addEventListener('drop', (e) => handleBackgroundDrop(e));
+            document.getElementById('backgroundInput').addEventListener('change', handleBackgroundChange);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('active');
+        }
+
+        function handleDragLeave(e) {
+            e.currentTarget.classList.remove('active');
+        }
+
+        // معالجة الصور
+        async function handleImageChange(e) {
+            const file = e.target.files[0];
+            if (file) {
+                await handleImageUpload(file);
+            }
+        }
+
+        async function handleImageDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('active');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                await handleImageUpload(files[0]);
+            }
+        }
+
+        async function handleImageUpload(file) {
+            try {
+                showStatus('imageStatus', 'جاري حفظ الصورة...', 'info');
+                const imageId = await FileUploadManager.handleImageUpload(file);
+                
+                // معاينة
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('imagePreviewImg').src = e.target.result;
+                    document.getElementById('imagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                showStatus('imageStatus', `✅ تم حفظ الصورة بنجاح (ID: ${imageId})`, 'success');
+            } catch (error) {
+                showStatus('imageStatus', `❌ خطأ: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadImagesFromStorage() {
+            try {
+                const images = await storage.getAllImages();
+                if (images.length === 0) {
+                    document.getElementById('imagesList').innerHTML = '<div class="empty-state">لا توجد صور محفوظة</div>';
+                    return;
+                }
+
+                let html = '<ul class="file-list">';
+                for (const img of images) {
+                    const dataURL = await storage.blobToDataURL(img.blob);
+                    const size = (img.size / 1024).toFixed(2);
+                    const date = new Date(img.timestamp).toLocaleString('ar-SA');
+                    
+                    html += `
+                        <li class="file-item">
+                            <div class="file-info">
+                                <div class="file-name">${img.name || 'صورة بدون اسم'}</div>
+                                <div class="file-meta">${size} KB - ${date}</div>
+                                <img src="${dataURL}" style="max-width: 150px; margin-top: 10px; border-radius: 4px;">
+                            </div>
+                            <div class="file-actions">
+                                <button class="btn btn-danger btn-small" onclick="deleteImageFromStorage('${img.id}')">حذف</button>
+                            </div>
+                        </li>
+                    `;
+                }
+                html += '</ul>';
+                document.getElementById('imagesList').innerHTML = html;
+            } catch (error) {
+                console.error('❌ خطأ:', error);
+            }
+        }
+
+        async function deleteImageFromStorage(imageId) {
+            await FileUploadManager.deleteImage(imageId);
+            showStatus('imageStatus', '✅ تم حذف الصورة', 'success');
+            loadImagesFromStorage();
+        }
+
+        async function clearAllImages() {
+            if (confirm('هل أنت متأكد من حذف جميع الصور؟')) {
+                const images = await storage.getAllImages();
+                for (const img of images) {
+                    await storage.deleteImage(img.id);
+                }
+                document.getElementById('imagesList').innerHTML = '';
+                showStatus('imageStatus', '✅ تم حذف جميع الصور', 'success');
+            }
+        }
+
+        // معالجة الأصوات
+        async function handleSoundChange(e) {
+            const file = e.target.files[0];
+            if (file) {
+                await handleSoundUpload(file);
+            }
+        }
+
+        async function handleSoundDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('active');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                await handleSoundUpload(files[0]);
+            }
+        }
+
+        async function handleSoundUpload(file) {
+            try {
+                showStatus('soundStatus', 'جاري حفظ الصوت...', 'info');
+                const soundId = await FileUploadManager.handleSoundUpload(file);
+                
+                // معاينة
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('soundPreviewAudio').src = e.target.result;
+                    document.getElementById('soundPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                showStatus('soundStatus', `✅ تم حفظ الصوت بنجاح (ID: ${soundId})`, 'success');
+            } catch (error) {
+                showStatus('soundStatus', `❌ خطأ: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadSoundsFromStorage() {
+            try {
+                const sounds = await storage.getAllSounds();
+                if (sounds.length === 0) {
+                    document.getElementById('soundsList').innerHTML = '<div class="empty-state">لا توجد أصوات محفوظة</div>';
+                    return;
+                }
+
+                let html = '<ul class="file-list">';
+                for (const sound of sounds) {
+                    const dataURL = await storage.blobToDataURL(sound.blob);
+                    const size = (sound.size / 1024).toFixed(2);
+                    const date = new Date(sound.timestamp).toLocaleString('ar-SA');
+                    
+                    html += `
+                        <li class="file-item">
+                            <div class="file-info">
+                                <div class="file-name">${sound.name || 'صوت بدون اسم'}</div>
+                                <div class="file-meta">${size} KB - ${date}</div>
+                                <audio controls style="margin-top: 10px; width: 200px;">
+                                    <source src="${dataURL}">
+                                </audio>
+                            </div>
+                            <div class="file-actions">
+                                <button class="btn btn-danger btn-small" onclick="deleteSoundFromStorage('${sound.id}')">حذف</button>
+                            </div>
+                        </li>
+                    `;
+                }
+                html += '</ul>';
+                document.getElementById('soundsList').innerHTML = html;
+            } catch (error) {
+                console.error('❌ خطأ:', error);
+            }
+        }
+
+        async function deleteSoundFromStorage(soundId) {
+            await FileUploadManager.deleteSound(soundId);
+            showStatus('soundStatus', '✅ تم حذف الصوت', 'success');
+            loadSoundsFromStorage();
+        }
+
+        async function clearAllSounds() {
+            if (confirm('هل أنت متأكد من حذف جميع الأصوات؟')) {
+                const sounds = await storage.getAllSounds();
+                for (const sound of sounds) {
+                    await storage.deleteSound(sound.id);
+                }
+                document.getElementById('soundsList').innerHTML = '';
+                showStatus('soundStatus', '✅ تم حذف جميع الأصوات', 'success');
+            }
+        }
+
+        // معالجة الخلفيات
+        async function handleBackgroundChange(e) {
+            const file = e.target.files[0];
+            if (file) {
+                await handleBackgroundUpload(file);
+            }
+        }
+
+        async function handleBackgroundDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('active');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                await handleBackgroundUpload(files[0]);
+            }
+        }
+
+        async function handleBackgroundUpload(file) {
+            try {
+                showStatus('backgroundStatus', 'جاري حفظ الخلفية...', 'info');
+                const backgroundId = await FileUploadManager.handleBackgroundUpload(file);
+                
+                // معاينة
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    document.getElementById('backgroundPreviewImg').src = e.target.result;
+                    document.getElementById('backgroundPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+                
+                showStatus('backgroundStatus', `✅ تم حفظ الخلفية بنجاح (ID: ${backgroundId})`, 'success');
+            } catch (error) {
+                showStatus('backgroundStatus', `❌ خطأ: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadBackgroundsFromStorage() {
+            try {
+                const backgrounds = await storage.getAllBackgrounds();
+                if (backgrounds.length === 0) {
+                    document.getElementById('backgroundsList').innerHTML = '<div class="empty-state">لا توجد خلفيات محفوظة</div>';
+                    return;
+                }
+
+                let html = '<ul class="file-list">';
+                for (const bg of backgrounds) {
+                    const dataURL = await storage.blobToDataURL(bg.blob);
+                    const size = (bg.size / 1024).toFixed(2);
+                    const date = new Date(bg.timestamp).toLocaleString('ar-SA');
+                    
+                    html += `
+                        <li class="file-item">
+                            <div class="file-info">
+                                <div class="file-name">${bg.name || 'خلفية بدون اسم'}</div>
+                                <div class="file-meta">${size} KB - ${date}</div>
+                                <img src="${dataURL}" style="max-width: 150px; margin-top: 10px; border-radius: 4px;">
+                            </div>
+                            <div class="file-actions">
+                                <button class="btn btn-danger btn-small" onclick="deleteBackgroundFromStorage('${bg.id}')">حذف</button>
+                            </div>
+                        </li>
+                    `;
+                }
+                html += '</ul>';
+                document.getElementById('backgroundsList').innerHTML = html;
+            } catch (error) {
+                console.error('❌ خطأ:', error);
+            }
+        }
+
+        async function deleteBackgroundFromStorage(backgroundId) {
+            await FileUploadManager.deleteBackground(backgroundId);
+            showStatus('backgroundStatus', '✅ تم حذف الخلفية', 'success');
+            loadBackgroundsFromStorage();
+        }
+
+        async function clearAllBackgrounds() {
+            if (confirm('هل أنت متأكد من حذف جميع الخلفيات؟')) {
+                const backgrounds = await storage.getAllBackgrounds();
+                for (const bg of backgrounds) {
+                    await storage.deleteBackground(bg.id);
+                }
+                document.getElementById('backgroundsList').innerHTML = '';
+                showStatus('backgroundStatus', '✅ تم حذف جميع الخلفيات', 'success');
+            }
+        }
+
+        // الإحصائيات
+        async function showStorageStats() {
+            try {
+                const images = await storage.getAllImages();
+                const sounds = await storage.getAllSounds();
+                const backgrounds = await storage.getAllBackgrounds();
+
+                let totalSize = 0;
+                images.forEach(img => totalSize += img.size || 0);
+                sounds.forEach(sound => totalSize += sound.size || 0);
+                backgrounds.forEach(bg => totalSize += bg.size || 0);
+
+                const stats = `
+                    <div class="status success">
+                        <p><strong>📸 عدد الصور:</strong> ${images.length}</p>
+                        <p><strong>🔊 عدد الأصوات:</strong> ${sounds.length}</p>
+                        <p><strong>🎨 عدد الخلفيات:</strong> ${backgrounds.length}</p>
+                        <p><strong>💾 إجمالي الحجم:</strong> ${(totalSize / (1024 * 1024)).toFixed(2)} MB</p>
+                    </div>
+                `;
+                document.getElementById('statsContainer').innerHTML = stats;
+            } catch (error) {
+                console.error('❌ خطأ:', error);
+            }
+        }
+
+        async function clearAllData() {
+            if (confirm('⚠️ هل أنت متأكد من حذف جميع البيانات المحفوظة؟ لا يمكن التراجع عن هذا!')) {
+                if (confirm('تأكيد نهائي: حذف جميع البيانات؟')) {
+                    await storage.clearAllData();
+                    document.getElementById('imagesList').innerHTML = '';
+                    document.getElementById('soundsList').innerHTML = '';
+                    document.getElementById('backgroundsList').innerHTML = '';
+                    document.getElementById('statsContainer').innerHTML = '<div class="status success">✅ تم حذف جميع البيانات</div>';
+                }
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                if (type === 'success') {
+                    element.innerHTML = '';
+                }
+            }, 3000);
+        }
+
+        // حفظ تلقائي
+        setInterval(async () => {
+            console.log('💾 حفظ دوري...');
+        }, 30000);
+
+        // حفظ عند إغلاق الصفحة
+        window.addEventListener('beforeunload', () => {
+            console.log('💾 حفظ البيانات قبل الإغلاق...');
+        });
+    </script>
+</body>
+</html>

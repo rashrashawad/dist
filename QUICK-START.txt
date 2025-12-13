@@ -1,0 +1,217 @@
+📋 خطوات التكامل السريعة
+═══════════════════════════════════════════════════════════
+
+✅ الخطوة 1️⃣: إضافة المكتبات إلى index.html
+───────────────────────────────────────────────
+قبل `</head>` أضف:
+
+    <script src="src/storage.js"></script>
+    <script src="src/fileUploadManager.js"></script>
+    <script src="src/integration.js"></script>
+
+---
+
+✅ الخطوة 2️⃣: حفظ الخلفية
+───────────────────────────────────────────────
+في الكود حيث يتم اختيار الخلفية:
+
+    const file = fileInput.files[0];
+    await persistentStorageAPI.saveNewBackground(file);
+
+أو باستخدام الحدث:
+
+    onBackgroundChange(document.getElementById('backgroundInput'));
+
+---
+
+✅ الخطوة 3️⃣: تحميل آخر خلفية عند الفتح
+───────────────────────────────────────────────
+في دالة البدء:
+
+    await persistentStorageAPI.loadLastBackground();
+
+---
+
+✅ الخطوة 4️⃣: حفظ أصوات الآذان
+───────────────────────────────────────────────
+للفجر:
+    const file = fileInput.files[0];
+    await persistentStorageAPI.saveCustomAdhanSound(file, 'الفجر');
+
+للظهر:
+    await persistentStorageAPI.saveCustomAdhanSound(file, 'الظهر');
+
+للعصر:
+    await persistentStorageAPI.saveCustomAdhanSound(file, 'العصر');
+
+للمغرب:
+    await persistentStorageAPI.saveCustomAdhanSound(file, 'المغرب');
+
+للعشاء:
+    await persistentStorageAPI.saveCustomAdhanSound(file, 'العشاء');
+
+---
+
+✅ الخطوة 5️⃣: تشغيل صوت الآذان
+───────────────────────────────────────────────
+عند وقت الصلاة:
+
+    await persistentStorageAPI.playCustomAdhanSound('الفجر');
+
+---
+
+✅ الخطوة 6️⃣: حفظ الإعدادات
+───────────────────────────────────────────────
+حفظ كل شيء:
+
+    await persistentStorageAPI.saveAllSettings({
+        theme: 'dark',
+        language: 'ar',
+        volume: 0.8,
+        notifications: true
+    });
+
+تحديث إعداد واحد:
+
+    await persistentStorageAPI.updateSetting('volume', 0.5);
+
+تحميل جميع الإعدادات:
+
+    const settings = await persistentStorageAPI.loadAllSettings();
+
+---
+
+✅ الخطوة 7️⃣: الحفظ التلقائي
+───────────────────────────────────────────────
+سيحفظ تلقائياً كل 30 ثانية. لتحديث بيانات معينة:
+
+    persistentStorageAPI.autoSave.setPendingData('currentPrayer', 'الفجر');
+
+---
+
+✅ الخطوة 8️⃣: عرض الإحصائيات
+───────────────────────────────────────────────
+للمسح عند الحاجة:
+
+    const stats = await persistentStorageAPI.showStorageStats();
+    console.log(stats);
+
+حذف الملفات القديمة:
+
+    await persistentStorageAPI.deleteOldFiles(30); // أكثر من 30 يوم
+
+---
+
+═══════════════════════════════════════════════════════════
+
+🚀 أمثلة استخدام سريعة:
+═══════════════════════════════════════════════════════════
+
+// عند فتح التطبيق
+async function initApp() {
+    // تحميل الخلفية المحفوظة
+    await persistentStorageAPI.loadLastBackground();
+    
+    // تحميل الإعدادات
+    const settings = await persistentStorageAPI.loadAllSettings();
+    
+    // تطبيق الإعدادات
+    applySettings(settings);
+    
+    console.log('✅ تم تحميل كل شيء');
+}
+
+// عند تغيير الخلفية
+async function changeBackground(file) {
+    try {
+        await persistentStorageAPI.saveNewBackground(file);
+        alert('✅ تم حفظ الخلفية');
+    } catch (error) {
+        alert('❌ خطأ: ' + error.message);
+    }
+}
+
+// عند تشغيل الآذان
+async function playAdhan(prayerName) {
+    try {
+        await persistentStorageAPI.playCustomAdhanSound(prayerName);
+    } catch (error) {
+        console.error('❌ خطأ:', error);
+    }
+}
+
+// الحفظ التلقائي عند التغيير
+document.getElementById('volumeSlider').addEventListener('input', (e) => {
+    persistentStorageAPI.autoSave.setPendingData('volume', e.target.value);
+});
+
+---
+
+═══════════════════════════════════════════════════════════
+
+📁 الملفات المضافة:
+═══════════════════════════════════════════════════════════
+
+✅ src/storage.js
+   - مكتبة التخزين الرئيسية (IndexedDB + LocalStorage)
+   - حفظ/تحميل الملفات والإعدادات
+   - ~300 سطر (معلق بالتفصيل)
+
+✅ src/fileUploadManager.js
+   - مدير رفع الملفات
+   - التحقق من صيغة الملفات
+   - حساب أحجام الملفات
+   - ~250 سطر (معلق بالتفصيل)
+
+✅ src/integration.js
+   - دوال التكامل السهلة
+   - أمثلة عملية
+   - نظام الحفظ التلقائي
+   - ~500 سطر (معلق بالتفصيل)
+
+✅ STORAGE-GUIDE.md
+   - دليل شامل بـ 400+ سطر
+   - أمثلة لكل عملية
+   - حل المشاكل الشائعة
+
+✅ QUICK-START.txt (هذا الملف)
+   - خطوات سريعة
+   - أمثلة مختصرة
+   - قائمة بالملفات
+
+✅ storage-demo.html
+   - تطبيق ويب كامل
+   - واجهة جميلة لاختبار النظام
+   - جميع الميزات مطبقة
+
+---
+
+═══════════════════════════════════════════════════════════
+
+⚠️ نقاط مهمة:
+═══════════════════════════════════════════════════════════
+
+1️⃣ جميع البيانات محفوظة محلياً على الجهاز
+2️⃣ لا يتم إرسال أي بيانات للخوادم
+3️⃣ البيانات لن تُفقد حتى بعد إغلاق المتصفح
+4️⃣ الحذف اليدوي للسجل قد يؤدي لفقدان البيانات
+5️⃣ يعمل على جميع المتصفحات الحديثة
+
+---
+
+═══════════════════════════════════════════════════════════
+
+🎯 ماذا تبقى لك:
+
+✅ نظام تخزين دائم متكامل ✨
+✅ حفظ تلقائي كل 30 ثانية ✨
+✅ دوال جاهزة للاستخدام ✨
+✅ أمثلة عملية ✨
+✅ دليل شامل ✨
+
+= ما عليك إلا تضيف السطور البسيطة لـ index.html =
+
+---
+
+النسخة: 1.0
+التاريخ: 2025

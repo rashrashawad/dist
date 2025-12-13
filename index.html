@@ -1,0 +1,2707 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Al-Moazin Digital Clock - ساعة المؤذن</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Literata', 'serif'],
+                        body: ['Literata', 'serif'],
+                        headline: ['Literata', 'serif'],
+                        mono: ['monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --background: 220 19% 14%;
+            --foreground: 43 33% 92%;
+            --card: 220 19% 18%;
+            --card-foreground: 43 33% 92%;
+            --popover: 220 19% 14%;
+            --popover-foreground: 43 33% 92%;
+            --primary: 240 71% 27%;
+            --primary-foreground: 43 33% 92%;
+            --secondary: 220 15% 30%;
+            --secondary-foreground: 43 33% 92%;
+            --muted: 220 15% 30%;
+            --muted-foreground: 220 9% 65%;
+            --accent: 43 74% 49%;
+            --accent-foreground: 220 19% 14%;
+            --destructive: 0 84% 60%;
+            --destructive-foreground: 43 33% 92%;
+            --border: 220 15% 30%;
+            --input: 220 15% 30%;
+            --ring: 43 74% 49%;
+            --radius: 0.5rem;
+        }
+        body {
+            font-family: 'Literata', serif;
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+        }
+        .accordion-content.open {
+            max-height: 2000px;
+        }
+        .sheet-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background-color: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .sheet-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .sheet-content {
+            position: fixed;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 50;
+            width: 100%;
+            max-width: 28rem;
+            background-color: hsl(var(--card));
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s;
+        }
+        .sheet-content.open {
+            transform: translateX(0);
+        }
+        .slider {
+            position: relative;
+            display: flex;
+            width: 100%;
+            touch-action: none;
+            user-select: none;
+            align-items: center;
+        }
+        .slider-track {
+            position: relative;
+            height: 2px;
+            width: 100%;
+            background-color: hsl(var(--muted));
+            border-radius: 9999px;
+        }
+        .slider-range {
+            position: absolute;
+            height: 100%;
+            background-color: hsl(var(--primary));
+        }
+        .slider-thumb {
+            display: block;
+            width: 20px;
+            height: 20px;
+            background-color: hsl(var(--primary));
+            border-radius: 9999px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        /* Settings Panel Styles */
+        #settings-panel {
+            background-color: hsl(220, 19%, 18%) !important;
+            color: hsl(43, 33%, 92%) !important;
+        }
+        #settings-content {
+            background-color: hsl(220, 19%, 18%) !important;
+            color: hsl(43, 33%, 92%) !important;
+        }
+        #settings-content input[type="text"],
+        #settings-content input[type="number"],
+        #settings-content input[type="time"],
+        #settings-content input[type="file"],
+        #settings-content select {
+            background-color: hsl(220, 15%, 30%) !important;
+            color: hsl(43, 33%, 92%) !important;
+            border-color: hsl(220, 15%, 30%) !important;
+        }
+        #settings-content input[type="text"]:focus,
+        #settings-content input[type="number"]:focus,
+        #settings-content input[type="time"]:focus,
+        #settings-content select:focus {
+            outline: 2px solid hsl(43, 74%, 49%);
+            outline-offset: 2px;
+        }
+        #settings-content label {
+            color: hsl(43, 33%, 92%) !important;
+        }
+        #settings-content h3 {
+            color: hsl(43, 33%, 92%) !important;
+        }
+        #settings-content .text-muted-foreground {
+            color: hsl(220, 9%, 65%) !important;
+        }
+        #settings-content .border-b {
+            border-color: hsl(220, 15%, 30%) !important;
+        }
+        #settings-content .border-t {
+            border-color: hsl(220, 15%, 30%) !important;
+        }
+        #save-settings {
+            background-color: hsl(240, 71%, 27%) !important;
+            color: hsl(43, 33%, 92%) !important;
+        }
+        #save-settings:hover {
+            background-color: hsl(240, 71%, 35%) !important;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    <audio id="audioRef" class="hidden"></audio>
+    
+    <!-- Main Container -->
+    <div id="app-container"></div>
+    
+    <!-- Settings Panel -->
+    <div id="settings-overlay" class="sheet-overlay"></div>
+    <div id="settings-panel" class="sheet-content flex flex-col">
+        <div class="p-6 border-b">
+            <h2 class="text-2xl font-bold">إعدادات الساعة</h2>
+            <p class="text-sm text-muted-foreground mt-1">قم بتخصيص مظهر ومعلومات شاشة الساعة.</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-6" id="settings-content">
+            <!-- Settings content will be generated by JS -->
+        </div>
+        <div class="p-6 border-t space-y-3">
+            <button id="save-settings" class="w-full bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90">حفظ وإغلاق</button>
+            <button id="update-prayer-times" class="w-full bg-secondary text-secondary-foreground px-4 py-2 rounded-md hover:bg-secondary/90">تحديث مواقيت الصلاة</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONSTANTS ====================
+        const prayerNames = {
+            fajr: 'الفجر',
+            dhuhr: 'الظهر',
+            asr: 'العصر',
+            maghrib: 'المغرب',
+            isha: 'العشاء',
+        };
+
+        const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+        const hadiths = [
+            "«إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى»",
+            "«الدِّينُ النَّصِيحَةُ»",
+            "«لا يُؤْمِنُ أَحَدُكُمْ، حَتَّى يُحِبَّ لِأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ»",
+            "«مَنْ سَلَكَ طَرِيقًا يَلْتَمِسُ فِيهِ عِلْمًا، سَهَّلَ اللهُ لَهُ طَرِيقًا إِلَى الْجَنَّةِ»",
+            "«الْكَلِمَةُ الطَّيِّبَةُ صَدَقَةٌ»",
+            "«تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ لَكَ صَدَقَةٌ»",
+            "«خَيْرُكُمْ مَنْ تَعَلَّمَ الْقُرْآنَ وَعَلَّمَهُ»"
+        ];
+
+        const azkarAfterPrayer = [
+            "أَسْـتَغْفِرُ الله، أَسْـتَغْفِرُ الله، أَسْـتَغْفِرُ الله.\n\nاللّهُـمَّ أَنْـتَ السَّلامُ ، وَمِـنْكَ السَّلام ، تَبارَكْتَ يا ذا الجَـلالِ وَالإِكْـرام .",
+            "لا إلهَ إلاّ اللّهُ وحدَهُ لا شريكَ لهُ، لهُ المُـلْكُ ولهُ الحَمْد، وهوَ على كلّ شَيءٍ قَدير،\n\nاللّهُـمَّ لا مانِعَ لِما أَعْطَـيْت، وَلا مُعْطِـيَ لِما مَنَـعْت، وَلا يَنْفَـعُ ذا الجَـدِّ مِنْـكَ الجَـد.",
+            "لا إلهَ إلاّ اللّه، وحدَهُ لا شريكَ لهُ، لهُ الملكُ ولهُ الحَمد، وهوَ على كلّ شيءٍ قدير،\n\nلا حَـوْلَ وَلا قـوَّةَ إِلاّ بِاللهِ، لا إلهَ إلاّ اللّـه، وَلا نَعْـبُـدُ إِلاّ إيّـاه، لَهُ النِّعْـمَةُ وَلَهُ الفَضْل وَلَهُ الثَّـناءُ الحَـسَن، لا إلهَ إلاّ اللّهُ مخْلِصـينَ ل_ـهُ الدِّينَ وَلَوْ كَـرِهَ الكـافِرون.",
+            "لا إلهَ إلاّ اللّهُ وحْـدَهُ لا شريكَ لهُ، لهُ المُلكُ ولهُ الحَمْد، يُحيـي وَيُمـيتُ وهُوَ على كُلّ شيءٍ قدير.",
+            "اللّهُـمَّ إِنِّـي أَسْأَلُـكَ عِلْمـاً نافِعـاً وَرِزْقـاً طَيِّـباً ، وَعَمَـلاً مُتَقَـبَّلاً.",
+            "اللَّهُمَّ أَجِرْنِي مِنْ النَّار.\n\n(بعد صلاة الصبح والمغرب)",
+            "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ.\n\n(ثلاث مرات بعد صلاتي الفجر والمغرب)",
+            "أَعُوذُ بِاللهِ مِنْ الشَّيْطَانِ الرَّجِيمِ\n\nاللّهُ لاَ إِلَـهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلاَّ بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلاَ يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلاَّ بِمَا شَاء وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالأَرْضِ وَلاَ يَؤُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ.\n\n[آية الكرسى - البقرة 255]",
+            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ هُوَ ٱللَّهُ أَحَدٌ، ٱللَّهُ ٱلصَّمَدُ، لَمْ يَلِدْ وَلَمْ يُولَدْ، وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ.\n\n[سورة الإخلاص]",
+            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ، مِن شَرِّ مَا خَلَقَ، وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ، وَمِن شَرِّ ٱلنَّفَّٰثَٰتِ فِى ٱلْعُقَدِ، وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ.\n\n[سورة الفلق]",
+            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ أَعُوذُ بِرَبِّ ٱلنَّاسِ، مَلِكِ ٱلنَّاسِ، إِلَٰهِ ٱلنَّاسِ، مِن شَرِّ ٱلْوَسْوَاسِ ٱلْخَنَّاسِ، ٱلَّذِى يُوَسْوِسُ فِى صُدُورِ ٱلنَّاسِ، مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ.\n\n[سورة الناس]\n\n(ثلاث مرات بعد صلاتي الفجر والمغرب)"
+        ];
+
+        const countries = [
+            'الأردن', 'السعودية', 'مصر', 'الإمارات العربية المتحدة', 'قطر', 'البحرين',
+            'الكويت', 'عمان', 'العراق', 'سوريا', 'لبنان', 'فلسطين', 'اليمن', 'ليبيا',
+            'تونس', 'الجزائر', 'المغرب', 'السودان', 'تركيا', 'باكستان', 'إندونيسيا', 'ماليزيا'
+        ];
+
+        const citiesByCountry = {
+            'الأردن': ['عمان', 'الزرقاء', 'إربد', 'العقبة', 'السلط', 'مأدبا'],
+            'السعودية': ['الرياض', 'جدة', 'مكة المكرمة', 'المدينة المنورة', 'الدمام', 'الخبر'],
+            'مصر': ['القاهرة', 'الإسكندرية', 'الجيزة', 'شبرا الخيمة', 'بور سعيد', 'السويس'],
+            'الإمارات العربية المتحدة': ['دبي', 'أبو ظبي', 'الشارقة', 'العين', 'عجمان'],
+            'قطر': ['الدوحة', 'الوكرة', 'الريان'],
+            'البحرين': ['المنامة', 'الرفاع', 'المحرق'],
+            'الكويت': ['مدينة الكويت', 'حولي', 'السالمية'],
+            'عمان': ['مسقط', 'صلالة', 'صحار'],
+            'العراق': ['بغداد', 'الموصل', 'البصرة', 'أربيل'],
+            'سوريا': ['دمشق', 'حلب', 'حمص'],
+            'لبنان': ['بيروت', 'طرابلس', 'صيدا'],
+            'فلسطين': ['القدس', 'غزة', 'رام الله', 'الخليل', 'نابلس'],
+            'اليمن': ['صنعاء', 'عدن', 'تعز'],
+            'ليبيا': ['طرابلس', 'بنغازي', 'مصراتة'],
+            'تونس': ['تونس', 'صفاقس', 'سوسة'],
+            'الجزائر': ['الجزائر العاصمة', 'وهران', 'قسنطينة'],
+            'المغرب': ['الرباط', 'الدار البيضاء', 'فاس', 'مراكش'],
+            'السودان': ['الخرطوم', 'أم درمان'],
+            'تركيا': ['اسطنبول', 'أنقرة', 'إزمير', 'بورصة', 'قونية'],
+            'باكستان': ['كراتشي', 'لاهور', 'إسلام آباد', 'فيصل آباد'],
+            'إندونيسيا': ['جاكرتا', 'سورابايا', 'باندونغ'],
+            'ماليزيا': ['كوالالمبور', 'جورج تاون', 'جوهور باهرو']
+        };
+
+        function resolveLocationMapping(countryAr, cityAr) {
+            const normalize = (s) => (s || '').trim();
+            const c = normalize(countryAr);
+            const city = normalize(cityAr);
+
+            if (c === 'الأردن') {
+                const cityMap = {
+                    'عمان': { apiCity: 'Amman', timeZone: 'Asia/Amman' },
+                    'الزرقاء': { apiCity: 'Zarqa', timeZone: 'Asia/Amman' },
+                    'إربد': { apiCity: 'Irbid', timeZone: 'Asia/Amman' },
+                    'العقبة': { apiCity: 'Aqaba', timeZone: 'Asia/Amman' },
+                    'السلط': { apiCity: 'As Salt', timeZone: 'Asia/Amman' },
+                    'مأدبا': { apiCity: 'Madaba', timeZone: 'Asia/Amman' },
+                };
+                const m = cityMap[city];
+                return {
+                    apiCountry: 'Jordan',
+                    apiCity: m?.apiCity ?? 'Amman',
+                    method: 23,
+                    timeZone: m?.timeZone ?? 'Asia/Amman',
+                };
+            }
+
+            if (c === 'السعودية') {
+                const cityMap = {
+                    'الرياض': { apiCity: 'Riyadh', timeZone: 'Asia/Riyadh' },
+                    'جدة': { apiCity: 'Jeddah', timeZone: 'Asia/Riyadh' },
+                    'مكة المكرمة': { apiCity: 'Makkah', timeZone: 'Asia/Riyadh' },
+                    'المدينة المنورة': { apiCity: 'Madinah', timeZone: 'Asia/Riyadh' },
+                    'الدمام': { apiCity: 'Dammam', timeZone: 'Asia/Riyadh' },
+                    'الخبر': { apiCity: 'Khobar', timeZone: 'Asia/Riyadh' },
+                };
+                const m = cityMap[city];
+                return {
+                    apiCountry: 'Saudi Arabia',
+                    apiCity: m?.apiCity ?? 'Riyadh',
+                    method: 4,
+                    timeZone: m?.timeZone ?? 'Asia/Riyadh',
+                };
+            }
+
+            if (c === 'مصر') {
+                const cityMap = {
+                    'القاهرة': { apiCity: 'Cairo', timeZone: 'Africa/Cairo' },
+                    'الإسكندرية': { apiCity: 'Alexandria', timeZone: 'Africa/Cairo' },
+                    'الجيزة': { apiCity: 'Giza', timeZone: 'Africa/Cairo' },
+                };
+                const m = cityMap[city];
+                return {
+                    apiCountry: 'Egypt',
+                    apiCity: m?.apiCity ?? 'Cairo',
+                    method: 5,
+                    timeZone: m?.timeZone ?? 'Africa/Cairo',
+                };
+            }
+
+            return { apiCountry: countryAr, apiCity: cityAr, timeZone: 'Asia/Amman' };
+        }
+
+        // ==================== API FUNCTIONS ====================
+        async function fetchPrayerTimes(country, city) {
+            const mapping = resolveLocationMapping(country, city);
+            const method = mapping.method ?? 23; // الأردن افتراضيًا
+            const tz = mapping.timeZone;
+            const countryParam = mapping.apiCountry ?? country;
+            const cityParam = mapping.apiCity ?? city;
+
+            const params = new URLSearchParams({
+                city: cityParam,
+                country: countryParam,
+                method: String(method),
+            });
+            if (tz) params.append('timezonestring', tz);
+
+            const url = `https://api.aladhan.com/v1/timingsByCity?${params.toString()}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch prayer times. Status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                if (data.code !== 200 || !data.data?.timings) {
+                    throw new Error('Invalid data structure received from prayer times API.');
+                }
+
+                const normalize = (v) => (v ? String(v).split(' ')[0] : '');
+                const t = data.data.timings;
+
+                return {
+                    fajr: normalize(t.Fajr),
+                    shuruq: normalize(t.Sunrise),
+                    dhuhr: normalize(t.Dhuhr),
+                    asr: normalize(t.Asr),
+                    maghrib: normalize(t.Maghrib),
+                    isha: normalize(t.Isha),
+                };
+            } catch (error) {
+                console.error('Error fetching prayer times data:', error);
+                throw error;
+            }
+        }
+
+        // ==================== DEFAULT SETTINGS ====================
+        const defaultSettings = {
+            mosqueName: 'مسجدالتلهوني',
+            timeFormat: '12h',
+            prayerTimes: {
+                fajr: '04:02',
+                dhuhr: '12:42',
+                asr: '16:23',
+                maghrib: '19:51',
+                isha: '21:22',
+            },
+            prayerTimeOffsets: {
+                fajr: 0,
+                dhuhr: 0,
+                asr: 0,
+                maghrib: 0,
+                isha: 0,
+            },
+            iqamaCountdown: {
+                fajr: 20,
+                dhuhr: 15,
+                asr: 15,
+                maghrib: 10,
+                isha: 15,
+            },
+            dimDuration: 1,
+            adhanDurationMinutes: 3,
+            adhanDurationSeconds: 14,
+            phoneImageDurationMinutes: 2,
+            phoneImageDurationSeconds: 0,
+            azkarDurationMinutes: 5,
+            azkarDurationSeconds: 0,
+            shuruqTime: '05:33',
+            shuruqOffset: -5,
+            jumuahTime: '12:43',
+            jumuahOffset: 0,
+            country: 'الأردن',
+            city: 'عمان',
+            showWeather: true,
+            temperature: 25,
+            adhanSound: '',
+            fajrAdhanSound: '',
+            phoneImage: '',
+            adhanImage: '',
+            iqamaBackgroundImage: '',
+            iqamaBackgroundColor: '#1e3a8a',
+            volume: 0.5,
+            isMuted: false,
+            azkarBackgroundImage: '',
+            backgroundImage: '',
+            adhanTextPosition: 'center',
+            colors: {
+                textColor: '#FFFFFF',
+                nextPrayerTextColor: '#FFD700',
+                iqamaCountdownTextColor: '#FFFFFF',
+                azkarTextColor: '#FFFFFF',
+                shuruqBoxColor: '#1e3a8a',
+                clockBoxColor: '#1d4ed8',
+                jumuahBoxColor: '#1e3a8a',
+                prayerBoxesColor: '#1e3a8a',
+            },
+        };
+
+        // ==================== UPDATE FUNCTIONS ====================
+        async function updatePrayerTimes() {
+            try {
+                const settings = getSettings();
+                const newTimes = await fetchPrayerTimes(settings.country, settings.city);
+                
+                // تحديث مواقيت الصلاة مع الحفاظ على الإعدادات الأخرى
+                settings.prayerTimes = newTimes;
+                
+                // تحديث وقت الشروق إذا كان موجوداً
+                if (newTimes.shuruq) {
+                    settings.shuruqTime = newTimes.shuruq;
+                }
+                
+                // حفظ الإعدادات الجديدة
+                state.settings = settings;
+                saveSettings();
+                
+                console.log('تم تحديث مواقيت الصلاة بنجاح');
+                // تحديث واجهة المستخدم
+                renderMainScreen();
+                return true;
+            } catch (error) {
+                console.error('فشل في تحديث مواقيت الصلاة:', error);
+                return false;
+            }
+        }
+        
+        // تحديث مواقيت الصلاة عند بدء التشغيل
+        window.addEventListener('load', async () => {
+            await updatePrayerTimes();
+            
+            // تحديث يومياً في منتصف الليل
+            function scheduleMidnightUpdate() {
+                const now = new Date();
+                const midnight = new Date(now);
+                midnight.setHours(24, 0, 0, 0); // منتصف الليل
+                
+                const timeUntilMidnight = midnight - now;
+                
+                // جدولة التحديث الأول لليلة القادمة
+                setTimeout(updatePrayerTimes, timeUntilMidnight);
+                
+                // جدولة التحديثات اليومية التالية
+                setInterval(updatePrayerTimes, 24 * 60 * 60 * 1000);
+            }
+            
+            scheduleMidnightUpdate();
+        });
+        
+        // ==================== UTILITY FUNCTIONS ====================
+        function applyOffsetToTime(time, offsetMinutes) {
+            if (!time || !time.includes(':')) return time;
+            const [hours, minutes] = time.split(':').map(Number);
+            if (isNaN(hours) || isNaN(minutes)) return time;
+            
+            const totalMinutes = hours * 60 + minutes + offsetMinutes;
+            const adjustedMinutes = ((totalMinutes % 1440) + 1440) % 1440;
+            const newHours = Math.floor(adjustedMinutes / 60);
+            const newMinutes = adjustedMinutes % 60;
+            
+            return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}`;
+        }
+
+        function formatPrayerTime(time24, timeFormat, nowTz) {
+            if (!time24 || !time24.includes(':')) return '';
+            const [hours, minutes] = time24.split(':');
+            if (isNaN(parseInt(hours)) || isNaN(parseInt(minutes))) return '';
+            
+            const date = new Date(nowTz);
+            date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+            
+            if (timeFormat === '12h') {
+                let h = date.getHours();
+                const period = h >= 12 ? 'PM' : 'AM';
+                h = h % 12 || 12;
+                return `${h}:${String(date.getMinutes()).padStart(2, '0')}`;
+            } else {
+                return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+            }
+        }
+
+        function formatHijriDate(date) {
+            return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-civil', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            }).format(date);
+        }
+
+        function formatGregorianDate(date) {
+            return new Intl.DateTimeFormat('ar-EG', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+            }).format(date);
+        }
+
+        // ==================== STATE MANAGEMENT ====================
+        let state = {
+            settings: JSON.parse(JSON.stringify(defaultSettings)),
+            isPanelOpen: false,
+            isFetchingTimes: false,
+            isOffline: false,
+            currentPhase: 'idle', // 'idle' | 'adhan' | 'iqamaCountdown' | 'phoneImage' | 'azkar'
+            activePrayer: null,
+            iqamaEndTime: null,
+            currentAzkarIndex: 0,
+            currentTime: new Date(),
+            phaseTimeoutRef: null,
+            azkarIntervalRef: null,
+            isAdhanPlaying: false,
+            audioUnlocked: false,
+        };
+
+        // ==================== SETTINGS FUNCTIONS ====================
+        function getSettings() {
+            try {
+                const savedSettings = localStorage.getItem('alMoazinClockSettings');
+                if (savedSettings) {
+                    const parsedSettings = JSON.parse(savedSettings);
+                    return {
+                        ...defaultSettings,
+                        ...parsedSettings
+                    };
+                }
+            } catch (e) {
+                console.error('Error loading settings:', e);
+            }
+            return defaultSettings;
+        }
+        
+        // ==================== INITIALIZATION ====================
+        function init() {
+            // التحقق من أن localStorage متاح
+            if (typeof(Storage) === "undefined") {
+                console.error('❌ localStorage غير متاح في هذا المتصفح');
+                state.settings = JSON.parse(JSON.stringify(defaultSettings));
+                renderMainScreen();
+                return;
+            }
+            
+            // Load settings from localStorage
+            try {
+                console.log('📂 بدء تحميل الإعدادات من localStorage...');
+                const savedSettings = localStorage.getItem('alMoazinClockSettings');
+                const savedMedia = localStorage.getItem('alMoazinMediaFiles');
+                const savedPrayerTimesData = localStorage.getItem('alMoazinPrayerTimesData');
+                
+                console.log('📦 البيانات المحفوظة:', {
+                    hasSettings: !!savedSettings,
+                    hasMedia: !!savedMedia,
+                    hasPrayerTimesData: !!savedPrayerTimesData,
+                    settingsLength: savedSettings ? savedSettings.length : 0,
+                    mediaLength: savedMedia ? savedMedia.length : 0,
+                    prayerTimesDataLength: savedPrayerTimesData ? savedPrayerTimesData.length : 0
+                });
+                
+                if (savedSettings) {
+                    console.log('✅ تم العثور على إعدادات محفوظة');
+                    const parsedSettings = JSON.parse(savedSettings);
+                    let parsedMedia = {};
+                    let parsedPrayerTimesData = {};
+                    
+                    if (savedMedia) {
+                        try {
+                            parsedMedia = JSON.parse(savedMedia);
+                            console.log('✅ تم تحميل الملفات والصور المحفوظة:', {
+                                hasBackgroundImage: !!parsedMedia.backgroundImage,
+                                hasPhoneImage: !!parsedMedia.phoneImage,
+                                hasAdhanImage: !!parsedMedia.adhanImage,
+                                hasIqamaBackgroundImage: !!parsedMedia.iqamaBackgroundImage,
+                                hasAzkarBackgroundImage: !!parsedMedia.azkarBackgroundImage,
+                                hasAdhanSound: !!parsedMedia.adhanSound,
+                                hasFajrAdhanSound: !!parsedMedia.fajrAdhanSound
+                            });
+                        } catch (e) {
+                            console.warn('⚠️ فشل تحميل الملفات المحفوظة:', e);
+                            parsedMedia = {};
+                        }
+                    } else {
+                        console.log('📭 لا توجد ملفات محفوظة');
+                    }
+
+                    if (savedPrayerTimesData) {
+                        try {
+                            parsedPrayerTimesData = JSON.parse(savedPrayerTimesData);
+                            console.log('✅ تم تحميل بيانات مواقيت الصلاة المحفوظة:', {
+                                lastUpdated: parsedPrayerTimesData.lastUpdated,
+                                hasPrayerTimes: !!parsedPrayerTimesData.prayerTimes,
+                                hasPrayerTimeOffsets: !!parsedPrayerTimesData.prayerTimeOffsets
+                            });
+                        } catch (e) {
+                            console.warn('⚠️ فشل تحميل بيانات مواقيت الصلاة:', e);
+                            parsedPrayerTimesData = {};
+                        }
+                    } else {
+                        console.log('📭 لا توجد بيانات مواقيت صلاة محفوظة');
+                    }
+                    
+                    // دمج الإعدادات بشكل صحيح مع الحفاظ على جميع القيم
+                    // الملفات يجب أن تأتي بعد parsedSettings لتتجاوز أي قيم افتراضية
+                    state.settings = {
+                        ...defaultSettings,
+                        ...parsedSettings,
+                        // دمج الملفات بعد الإعدادات لضمان الحفاظ عليها
+                        backgroundImage: parsedMedia.backgroundImage || parsedSettings.backgroundImage || defaultSettings.backgroundImage,
+                        phoneImage: parsedMedia.phoneImage || parsedSettings.phoneImage || defaultSettings.phoneImage,
+                        adhanImage: parsedMedia.adhanImage || parsedSettings.adhanImage || defaultSettings.adhanImage,
+                        iqamaBackgroundImage: parsedMedia.iqamaBackgroundImage || parsedSettings.iqamaBackgroundImage || defaultSettings.iqamaBackgroundImage,
+                        azkarBackgroundImage: parsedMedia.azkarBackgroundImage || parsedSettings.azkarBackgroundImage || defaultSettings.azkarBackgroundImage,
+                        adhanSound: parsedMedia.adhanSound || parsedSettings.adhanSound || defaultSettings.adhanSound,
+                        fajrAdhanSound: parsedMedia.fajrAdhanSound || parsedSettings.fajrAdhanSound || defaultSettings.fajrAdhanSound,
+                        // التأكد من دمج الألوان بشكل صحيح
+                        colors: {
+                            ...defaultSettings.colors,
+                            ...(parsedSettings.colors || {}),
+                        },
+                        // التأكد من دمج أوقات الصلاة بشكل صحيح
+                        prayerTimes: {
+                            ...defaultSettings.prayerTimes,
+                            ...(parsedSettings.prayerTimes || {}),
+                        },
+                        // التأكد من دمج أوقات الإقامة بشكل صحيح
+                        iqamaCountdown: {
+                            ...defaultSettings.iqamaCountdown,
+                            ...(parsedSettings.iqamaCountdown || {}),
+                        },
+                        // التأكد من دمج التعديلات اليدوية بشكل صحيح
+                        prayerTimeOffsets: {
+                            ...defaultSettings.prayerTimeOffsets,
+                            ...(parsedSettings.prayerTimeOffsets || {}),
+                        },
+                    };
+                    
+                    // إزالة lastSaved من state.settings لأنه ليس جزءاً من الإعدادات
+                    if (state.settings.lastSaved) {
+                        delete state.settings.lastSaved;
+                    }
+                    console.log('✅ تم تحميل الإعدادات بنجاح:', {
+                        mosqueName: state.settings.mosqueName,
+                        country: state.settings.country,
+                        city: state.settings.city,
+                        prayerTimes: state.settings.prayerTimes,
+                        iqamaCountdown: state.settings.iqamaCountdown,
+                        colors: state.settings.colors,
+                        lastSaved: parsedSettings.lastSaved
+                    });
+                    
+                    // التحقق من أن جميع الإعدادات موجودة
+                    if (!state.settings.prayerTimes || !state.settings.colors || !state.settings.iqamaCountdown) {
+                        console.warn('⚠️ بعض الإعدادات مفقودة - استخدام القيم الافتراضية');
+                        state.settings = {
+                            ...defaultSettings,
+                            ...state.settings,
+                            prayerTimes: state.settings.prayerTimes || defaultSettings.prayerTimes,
+                            colors: state.settings.colors || defaultSettings.colors,
+                            iqamaCountdown: state.settings.iqamaCountdown || defaultSettings.iqamaCountdown,
+                        };
+                    }
+                    
+                    // التحقق النهائي من أن جميع الإعدادات موجودة
+                    console.log('🔍 التحقق النهائي من الإعدادات:', {
+                        hasPrayerTimes: !!state.settings.prayerTimes,
+                        hasColors: !!state.settings.colors,
+                        hasIqamaCountdown: !!state.settings.iqamaCountdown,
+                        mosqueName: state.settings.mosqueName,
+                        prayerTimesCount: Object.keys(state.settings.prayerTimes || {}).length,
+                        hasBackgroundImage: !!state.settings.backgroundImage,
+                        backgroundImageLength: state.settings.backgroundImage ? state.settings.backgroundImage.length : 0,
+                        hasPhoneImage: !!state.settings.phoneImage,
+                        hasAdhanImage: !!state.settings.adhanImage
+                    });
+                } else {
+                    console.log('🆕 لا توجد إعدادات محفوظة - استخدام الإعدادات الافتراضية');
+                    state.settings = JSON.parse(JSON.stringify(defaultSettings));
+                    
+                    // حفظ الإعدادات الافتراضية لأول مرة
+                    try {
+                        const essentialSettings = {
+                            ...defaultSettings,
+                            lastSaved: new Date().toISOString()
+                        };
+                        delete essentialSettings.backgroundImage;
+                        delete essentialSettings.iqamaBackgroundImage;
+                        delete essentialSettings.azkarBackgroundImage;
+                        delete essentialSettings.phoneImage;
+                        delete essentialSettings.adhanImage;
+                        delete essentialSettings.adhanSound;
+                        delete essentialSettings.fajrAdhanSound;
+                        localStorage.setItem('alMoazinClockSettings', JSON.stringify(essentialSettings));
+                        console.log('💾 تم حفظ الإعدادات الافتراضية لأول مرة');
+                    } catch (e) {
+                        console.warn('⚠️ فشل حفظ الإعدادات الافتراضية:', e);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ فشل تحميل الإعدادات:', error);
+                state.settings = JSON.parse(JSON.stringify(defaultSettings));
+            }
+
+            // Initialize audio
+            const audioRef = document.getElementById('audioRef');
+            if (audioRef) {
+                audioRef.volume = state.settings.volume;
+                audioRef.muted = state.settings.isMuted;
+            }
+
+            // Start clock
+            setInterval(() => {
+                state.currentTime = new Date();
+                updateUI();
+            }, 1000);
+
+            // Initial render
+            renderMainScreen();
+            setupEventListeners();
+            checkPrayerTime();
+            
+            // Check prayer time every 250ms - فحص متكرر لضمان عدم تفويت وقت الصلاة
+            setInterval(checkPrayerTime, 250);
+            
+            // فحص إضافي كل ثانية للتأكد من عدم تفويت وقت الصلاة
+            setInterval(() => {
+                if (state.currentPhase === 'idle') {
+                    checkPrayerTime();
+                }
+            }, 1000);
+            
+            // Check iqama countdown
+            setInterval(checkIqamaCountdown, 1000);
+            
+            // Initialize prayer times update system
+            initializePrayerTimesUpdates();
+        }
+        
+        // ==================== PRAYER TIMES AUTO-UPDATE SYSTEM ====================
+        function initializePrayerTimesUpdates() {
+            console.log('[AUTO UPDATE] 🚀 بدء نظام التحديث التلقائي للمواقيت');
+            
+            // 1. تحديث فوري عند بدء التطبيق
+            const initializeApp = async () => {
+                console.log('[INIT] 🚀 بدء التطبيق - فحص الحاجة للتحديث');
+                
+                const storedTimesData = localStorage.getItem('alMoazinPrayerTimes');
+                let needsUpdate = true;
+                
+                if (storedTimesData) {
+                    try {
+                        const { date, fetchTime } = JSON.parse(storedTimesData);
+                        const today = `${state.currentTime.getFullYear()}-${String(state.currentTime.getMonth() + 1).padStart(2, '0')}-${String(state.currentTime.getDate()).padStart(2, '0')}`;
+                        const isToday = date === today;
+                        const fetchAge = Date.now() - (fetchTime || 0);
+                        const maxAge = 12 * 60 * 60 * 1000; // 12 ساعة
+                        
+                        if (isToday && fetchAge < maxAge) {
+                            needsUpdate = false;
+                            console.log('[INIT] ✅ البيانات محدثة - لا حاجة للتحديث الآن');
+                        } else {
+                            console.log(`[INIT] ⚠️ البيانات قديمة - التحديث مطلوب (العمر: ${Math.round(fetchAge / 60000)} دقيقة)`);
+                        }
+                    } catch (e) {
+                        console.log('[INIT] ❌ خطأ في قراءة البيانات المحفوظة - سيتم التحديث');
+                    }
+                } else {
+                    console.log('[INIT] 📭 لا توجد بيانات محفوظة - سيتم التحديث');
+                }
+                
+                if (needsUpdate) {
+                    await fetchPrayerTimesAndWeather(true);
+                }
+            };
+            
+            initializeApp();
+            
+            // 2. تحديث دوري كل 6 ساعات
+            const REFRESH_INTERVAL = 6 * 60 * 60 * 1000; // 6 ساعات
+            const periodicUpdateId = setInterval(async () => {
+                console.log(`[PERIODIC UPDATE] 🔄 تحديث دوري للمواقيت`);
+                try {
+                    await fetchPrayerTimesAndWeather(true);
+                } catch (error) {
+                    console.log('[PERIODIC UPDATE] ⚠️ فشل التحديث من الإنترنت');
+                }
+            }, REFRESH_INTERVAL);
+            
+            // 3. فحص يومي احتياطي كل ساعة
+            const DAILY_CHECK_INTERVAL = 60 * 60 * 1000; // ساعة واحدة
+            const dailyCheckId = setInterval(async () => {
+                const storedTimesData = localStorage.getItem('alMoazinPrayerTimes');
+                if (storedTimesData) {
+                    try {
+                        const { date } = JSON.parse(storedTimesData);
+                        const today = `${state.currentTime.getFullYear()}-${String(state.currentTime.getMonth() + 1).padStart(2, '0')}-${String(state.currentTime.getDate()).padStart(2, '0')}`;
+                        
+                        if (date !== today) {
+                            console.log(`[DAILY CHECK] 📅 اكتشاف تاريخ جديد ${today} - بدء التحديث`);
+                            try {
+                                await fetchPrayerTimesAndWeather(true);
+                                console.log('[DAILY CHECK] ✅ تم التحديث من الإنترنت');
+                            } catch (error) {
+                                console.log('[DAILY CHECK] ⚠️ فشل التحديث من الإنترنت');
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[DAILY CHECK] ❌ خطأ في فحص التاريخ:', e);
+                    }
+                }
+            }, DAILY_CHECK_INTERVAL);
+            
+            // 4. تحديث يومي مضمون عند منتصف الليل
+            const scheduleMidnightUpdate = () => {
+                const now = new Date();
+                const midnight = new Date(now);
+                midnight.setHours(0, 0, 0, 0);
+                midnight.setDate(midnight.getDate() + 1); // منتصف الليل القادم
+                
+                const msUntilMidnight = midnight.getTime() - now.getTime();
+                
+                console.log(`[MIDNIGHT UPDATE] 🌙 سيتم التحديث اليومي عند منتصف الليل بعد ${Math.round(msUntilMidnight / (1000 * 60 * 60))} ساعة`);
+                
+                return setTimeout(async () => {
+                    console.log('[MIDNIGHT UPDATE] 🌅 حان منتصف الليل - بدء التحديث اليومي');
+                    
+                    try {
+                        await fetchPrayerTimesAndWeather(true);
+                        console.log('[MIDNIGHT UPDATE] ✅ تم التحديث من الإنترنت بنجاح');
+                    } catch (error) {
+                        console.log('[MIDNIGHT UPDATE] ⚠️ فشل التحديث من الإنترنت');
+                    }
+                    
+                    // جدولة التحديث التالي
+                    scheduleMidnightUpdate();
+                }, msUntilMidnight);
+            };
+            
+            const midnightTimeoutId = scheduleMidnightUpdate();
+            
+            // 5. تحديث عند الفجر (جدولة التحديث التالي عند الفجر)
+            const scheduleNextFajrUpdate = () => {
+                const fajrTime = state.settings.prayerTimes.fajr;
+                if (!fajrTime || !fajrTime.includes(':')) return;
+                
+                try {
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    
+                    const [hours, minutes] = fajrTime.split(':').map(Number);
+                    tomorrow.setHours(hours, minutes, 0, 0);
+                    
+                    const msUntilNextFajr = tomorrow.getTime() - new Date().getTime();
+                    
+                    if (msUntilNextFajr > 0) {
+                        console.log(`[FAJR UPDATE] 🕰️ سيتم التحديث التالي عند فجر الغد (${fajrTime}) - بعد ${Math.round(msUntilNextFajr / (1000 * 60 * 60))} ساعة`);
+                        
+                        setTimeout(async () => {
+                            console.log(`[FAJR UPDATE] 🌅 قد حان فجر يوم جديد - بدء التحديث`);
+                            await fetchPrayerTimesAndWeather(true);
+                            scheduleNextFajrUpdate(); // جدولة التحديث التالي
+                        }, msUntilNextFajr);
+                    }
+                } catch (error) {
+                    console.error(`[FAJR UPDATE] ❌ خطأ في جدولة التحديث:`, error);
+                }
+            };
+            
+            // جدولة التحديث عند الفجر بعد جلب المواقيت الأولى
+            setTimeout(() => {
+                scheduleNextFajrUpdate();
+            }, 5000); // بعد 5 ثواني من التحميل
+            
+            console.log('✅ تم تفعيل التحديث التلقائي واليومي والدوري والاحتياطي');
+            
+            // تنظيف عند إعادة التحميل (سيتم تنظيف تلقائياً عند إغلاق الصفحة)
+            window.addEventListener('beforeunload', () => {
+                clearInterval(periodicUpdateId);
+                clearTimeout(midnightTimeoutId);
+                clearInterval(dailyCheckId);
+            });
+        }
+
+        // ==================== PRAYER TIME CHECKING ====================
+        let lastCheckedTime = '';
+        let lastTriggeredPrayer = null;
+        let lastTriggeredTime = '';
+        let prayerInterval = null;
+        
+        // دالة لمراقبة أوقات الصلاة وتشغيل الأذان تلقائياً
+        function startPrayerMonitoring() {
+            // إيقاف أي مراقبة سابقة
+            if (prayerInterval) {
+                clearInterval(prayerInterval);
+            }
+            
+            // تحويل أوقات الصلاة إلى دقائق من منتصف الليل
+            const timeToMinutes = (timeStr) => {
+                const [hours, minutes] = timeStr.split(':').map(Number);
+                return hours * 60 + minutes;
+            };
+            
+            const prayerTimes = state.settings.prayerTimes;
+            if (!prayerTimes || Object.keys(prayerTimes).length === 0) {
+                console.warn('⚠️ لا توجد أوقات صلاة محفوظة لبدء المراقبة');
+                return;
+            }
+            
+            const fajrMinutes = timeToMinutes(prayerTimes.fajr);
+            const dhuhrMinutes = timeToMinutes(prayerTimes.dhuhr);
+            const asrMinutes = timeToMinutes(prayerTimes.asr);
+            const maghribMinutes = timeToMinutes(prayerTimes.maghrib);
+            const ishaMinutes = timeToMinutes(prayerTimes.isha);
+            
+            // التحقق من الوقت الحالي
+            const checkTime = () => {
+                const now = new Date();
+                const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                const currentSeconds = now.getSeconds();
+                
+                // التحقق من كل صلاة (دقيقة بعد دخول الوقت)
+                if (currentMinutes >= fajrMinutes && currentMinutes < fajrMinutes + 1 && currentSeconds < 10) {
+                    // الأذان لفجر (دقيقة بعد دخول الوقت)
+                    if (!lastTriggeredPrayer || lastTriggeredPrayer !== 'fajr' || lastTriggeredTime !== prayerTimes.fajr) {
+                        console.log(`🕰️ حان وقت صلاة الفجر - بدء الأذان`);
+                        
+                        // التأكد من وجود ملفات الأذان
+                        const adhanFile = state.settings.fajrAdhanSound || 'audio/audio_fajr.mp3';
+                        console.log(`🎵 سيتم تشغيل ملف الأذان: ${adhanFile}`);
+                        
+                        // تشغيل الأذان مباشرة
+                        triggerAdhan('fajr');
+                        lastTriggeredPrayer = 'fajr';
+                        lastTriggeredTime = prayerTimes.fajr;
+                    }
+                } else if (currentMinutes >= dhuhrMinutes && currentMinutes < dhuhrMinutes + 1 && currentSeconds < 10) {
+                    // الأذان لظهر (دقيقة بعد دخول الوقت)
+                    if (!lastTriggeredPrayer || lastTriggeredPrayer !== 'dhuhr' || lastTriggeredTime !== prayerTimes.dhuhr) {
+                        console.log(`🕰️ حان وقت صلاة الظهر - بدء الأذان`);
+                        // التأكد من تفعيل الصوت قبل تشغيل الأذان
+                        if (!state.audioUnlocked) {
+                            const audioRef = document.getElementById('audioRef');
+                            if (audioRef) {
+                                try {
+                                    audioRef.volume = 0;
+                                    const playPromise = audioRef.play();
+                                    if (playPromise) {
+                                        playPromise.then(() => {
+                                            audioRef.pause();
+                                            audioRef.currentTime = 0;
+                                            audioRef.volume = state.settings.volume;
+                                            state.audioUnlocked = true;
+                                            console.log('✅ تم تفعيل الصوت');
+                                            triggerAdhan('dhuhr');
+                                        }).catch((e) => {
+                                            console.warn('⚠️ لا يمكن تفعيل الصوت تلقائياً:', e);
+                                            triggerAdhan('dhuhr');
+                                        });
+                                    } else {
+                                        triggerAdhan('dhuhr');
+                                    }
+                                } catch (e) {
+                                    console.warn('⚠️ خطأ في تفعيل الصوت:', e);
+                                    triggerAdhan('dhuhr');
+                                }
+                            } else {
+                                console.error('❌ audioRef غير موجود!');
+                                triggerAdhan('dhuhr');
+                            }
+                        } else {
+                            triggerAdhan('dhuhr');
+                        }
+                        lastTriggeredPrayer = 'dhuhr';
+                        lastTriggeredTime = prayerTimes.dhuhr;
+                    }
+                } else if (currentMinutes >= asrMinutes && currentMinutes < asrMinutes + 1 && currentSeconds < 10) {
+                    // الأذان لعصر (دقيقة بعد دخول الوقت)
+                    if (!lastTriggeredPrayer || lastTriggeredPrayer !== 'asr' || lastTriggeredTime !== prayerTimes.asr) {
+                        console.log(`🕰️ حان وقت صلاة العصر - بدء الأذان`);
+                        // التأكد من تفعيل الصوت قبل تشغيل الأذان
+                        if (!state.audioUnlocked) {
+                            const audioRef = document.getElementById('audioRef');
+                            if (audioRef) {
+                                try {
+                                    audioRef.volume = 0;
+                                    const playPromise = audioRef.play();
+                                    if (playPromise) {
+                                        playPromise.then(() => {
+                                            audioRef.pause();
+                                            audioRef.currentTime = 0;
+                                            audioRef.volume = state.settings.volume;
+                                            state.audioUnlocked = true;
+                                            console.log('✅ تم تفعيل الصوت');
+                                            triggerAdhan('asr');
+                                        }).catch((e) => {
+                                            console.warn('⚠️ لا يمكن تفعيل الصوت تلقائياً:', e);
+                                            triggerAdhan('asr');
+                                        });
+                                    } else {
+                                        triggerAdhan('asr');
+                                    }
+                                } catch (e) {
+                                    console.warn('⚠️ خطأ في تفعيل الصوت:', e);
+                                    triggerAdhan('asr');
+                                }
+                            } else {
+                                console.error('❌ audioRef غير موجود!');
+                                triggerAdhan('asr');
+                            }
+                        } else {
+                            triggerAdhan('asr');
+                        }
+                        lastTriggeredPrayer = 'asr';
+                        lastTriggeredTime = prayerTimes.asr;
+                    }
+                } else if (currentMinutes >= maghribMinutes && currentMinutes < maghribMinutes + 1 && currentSeconds < 10) {
+                    // الأذان لمغرب (دقيقة بعد دخول الوقت)
+                    if (!lastTriggeredPrayer || lastTriggeredPrayer !== 'maghrib' || lastTriggeredTime !== prayerTimes.maghrib) {
+                        console.log(`🕰️ حان وقت صلاة المغرب - بدء الأذان`);
+                        // التأكد من تفعيل الصوت قبل تشغيل الأذان
+                        if (!state.audioUnlocked) {
+                            const audioRef = document.getElementById('audioRef');
+                            if (audioRef) {
+                                try {
+                                    audioRef.volume = 0;
+                                    const playPromise = audioRef.play();
+                                    if (playPromise) {
+                                        playPromise.then(() => {
+                                            audioRef.pause();
+                                            audioRef.currentTime = 0;
+                                            audioRef.volume = state.settings.volume;
+                                            state.audioUnlocked = true;
+                                            console.log('✅ تم تفعيل الصوت');
+                                            triggerAdhan('maghrib');
+                                        }).catch((e) => {
+                                            console.warn('⚠️ لا يمكن تفعيل الصوت تلقائياً:', e);
+                                            triggerAdhan('maghrib');
+                                        });
+                                    } else {
+                                        triggerAdhan('maghrib');
+                                    }
+                                } catch (e) {
+                                    console.warn('⚠️ خطأ في تفعيل الصوت:', e);
+                                    triggerAdhan('maghrib');
+                                }
+                            } else {
+                                console.error('❌ audioRef غير موجود!');
+                                triggerAdhan('maghrib');
+                            }
+                        } else {
+                            triggerAdhan('maghrib');
+                        }
+                        lastTriggeredPrayer = 'maghrib';
+                        lastTriggeredTime = prayerTimes.maghrib;
+                    }
+                } else if (currentMinutes >= ishaMinutes && currentMinutes < ishaMinutes + 1 && currentSeconds < 10) {
+                    // الأذان لعشاء (دقيقة بعد دخول الوقت)
+                    if (!lastTriggeredPrayer || lastTriggeredPrayer !== 'isha' || lastTriggeredTime !== prayerTimes.isha) {
+                        console.log(`🕰️ حان وقت صلاة العشاء - بدء الأذان`);
+                        // التأكد من تفعيل الصوت قبل تشغيل الأذان
+                        if (!state.audioUnlocked) {
+                            const audioRef = document.getElementById('audioRef');
+                            if (audioRef) {
+                                try {
+                                    audioRef.volume = 0;
+                                    const playPromise = audioRef.play();
+                                    if (playPromise) {
+                                        playPromise.then(() => {
+                                            audioRef.pause();
+                                            audioRef.currentTime = 0;
+                                            audioRef.volume = state.settings.volume;
+                                            state.audioUnlocked = true;
+                                            console.log('✅ تم تفعيل الصوت');
+                                            triggerAdhan('isha');
+                                        }).catch((e) => {
+                                            console.warn('⚠️ لا يمكن تفعيل الصوت تلقائياً:', e);
+                                            triggerAdhan('isha');
+                                        });
+                                    } else {
+                                        triggerAdhan('isha');
+                                    }
+                                } catch (e) {
+                                    console.warn('⚠️ خطأ في تفعيل الصوت:', e);
+                                    triggerAdhan('isha');
+                                }
+                            } else {
+                                console.error('❌ audioRef غير موجود!');
+                                triggerAdhan('isha');
+                            }
+                        } else {
+                            triggerAdhan('isha');
+                        }
+                        lastTriggeredPrayer = 'isha';
+                        lastTriggeredTime = prayerTimes.isha;
+                    }
+                }
+            };
+            
+            // التحقق كل دقيقة
+            prayerInterval = setInterval(checkTime, 60000);
+            // التحقق فوراً
+            checkTime();
+            
+            console.log('✅ بدء مراقبة أوقات الصلاة تلقائياً');
+        }
+        
+        function checkPrayerTime() {
+            if (state.currentPhase !== 'idle') {
+                // إذا كنا في مرحلة أخرى، لا نتحقق
+                return;
+            }
+            
+            const now = new Date();
+            const currentHours = now.getHours();
+            const currentMinutes = now.getMinutes();
+            const currentSeconds = now.getSeconds();
+            const currentTime = `${String(currentHours).padStart(2, '0')}:${String(currentMinutes).padStart(2, '0')}`;
+            const currentTimeFull = `${currentTime}:${String(currentSeconds).padStart(2, '0')}`;
+            
+            // طباعة مرة واحدة كل دقيقة للتحقق وإعادة تعيين lastTriggeredTime
+            if (currentTime !== lastCheckedTime && currentSeconds === 0) {
+                console.log(`🔍 فحص وقت الصلاة - الوقت الحالي: ${currentTimeFull}`);
+                console.log('📋 أوقات الصلاة الحالية:', state.settings.prayerTimes);
+                console.log('📊 حالة التطبيق:', {
+                    currentPhase: state.currentPhase,
+                    activePrayer: state.activePrayer,
+                    isAdhanPlaying: state.isAdhanPlaying,
+                    lastTriggeredPrayer: lastTriggeredPrayer,
+                    lastTriggeredTime: lastTriggeredTime
+                });
+                
+                // إعادة تعيين lastTriggeredTime عند تغيير الدقيقة للسماح بتشغيل الأذان في الدقيقة الجديدة
+                if (lastCheckedTime && lastCheckedTime !== currentTime) {
+                    console.log(`🔄 تم تغيير الدقيقة من ${lastCheckedTime} إلى ${currentTime} - إعادة تعيين lastTriggeredTime`);
+                    // نعيد تعيين lastTriggeredTime فقط إذا لم نكن في نفس وقت الصلاة
+                    const previousPrayerTime = lastTriggeredTime.split('-')[1];
+                    if (previousPrayerTime !== currentTime) {
+                        lastTriggeredTime = '';
+                        lastTriggeredPrayer = null;
+                        console.log('✅ تم إعادة تعيين lastTriggeredTime');
+                    }
+                }
+                
+                lastCheckedTime = currentTime;
+            }
+            
+            const prayerTimes = state.settings.prayerTimes;
+            
+            if (!prayerTimes || Object.keys(prayerTimes).length === 0) {
+                if (currentSeconds === 0) {
+                    console.warn('⚠️ لا توجد أوقات صلاة محفوظة');
+                }
+                return;
+            }
+            
+            // البحث عن صلاة تطابق الوقت الحالي - استخدام مقارنة نصية مباشرة
+            const prayerName = Object.keys(prayerTimes).find(p => {
+                const prayerTime = prayerTimes[p];
+                if (!prayerTime) return false;
+                
+                // تطبيع الوقت للتأكد من التنسيق الصحيح (HH:MM)
+                const normalizedPrayerTime = prayerTime.includes(':') ? prayerTime : null;
+                if (!normalizedPrayerTime) return false;
+                
+                // المقارنة النصية المباشرة (HH:MM)
+                const matches = normalizedPrayerTime === currentTime;
+                
+                // طباعة للتحقق عند الاقتراب من وقت الصلاة
+                if (matches) {
+                    console.log(`🔔 ✅ ✅ ✅ تطابق! صلاة ${prayerNames[p]}: الوقت الحالي ${currentTimeFull} - وقت الصلاة ${normalizedPrayerTime} - الثانية: ${currentSeconds} ✅ ✅ ✅`);
+                } else {
+                    // التحقق من الاقتراب (دقيقة واحدة قبل)
+                    const [prayerHours, prayerMinutes] = normalizedPrayerTime.split(':').map(Number);
+                    if (!isNaN(prayerHours) && !isNaN(prayerMinutes)) {
+                        // التحقق من الاقتراب (10 ثواني قبل)
+                        if (prayerHours === currentHours && prayerMinutes === currentMinutes && currentSeconds >= 50) {
+                            console.log(`🔔 ⏳ ⏳ ⏳ اقتراب شديد! صلاة ${prayerNames[p]}: الوقت الحالي ${currentTimeFull} - وقت الصلاة ${normalizedPrayerTime} - متبقى ${60 - currentSeconds} ثانية ⏳ ⏳ ⏳`);
+                        } else if (prayerHours === currentHours && prayerMinutes === currentMinutes + 1 && currentSeconds >= 50) {
+                            console.log(`🔔 ⏳ اقتراب! صلاة ${prayerNames[p]}: الوقت الحالي ${currentTimeFull} - وقت الصلاة ${normalizedPrayerTime} - متبقى أقل من دقيقة`);
+                        }
+                    }
+                }
+                
+                return matches;
+            });
+            
+            // طباعة معلومات التشخيص عند وجود تطابق
+            if (prayerName) {
+                console.log(`🔍 تم العثور على صلاة متطابقة: ${prayerNames[prayerName]} في ${currentTimeFull}`);
+            }
+            
+            // بدء الأذان فوراً عند دخول وقت الصلاة
+            // نستخدم triggerKey لمنع التكرار في نفس الدقيقة
+            const triggerKey = `${prayerName}-${currentTime}`;
+            
+            // طباعة معلومات التشخيص عند وجود تطابق
+            if (prayerName) {
+                console.log(`🔍 🔍 🔍 تم العثور على صلاة متطابقة: ${prayerNames[prayerName]} في ${currentTimeFull} 🔍 🔍 🔍`);
+                console.log(`🔑 triggerKey: ${triggerKey}`);
+                console.log(`🔑 lastTriggeredTime: ${lastTriggeredTime}`);
+                console.log(`🔑 هل triggerKey !== lastTriggeredTime? ${triggerKey !== lastTriggeredTime}`);
+            }
+            
+            // التحقق من أن هذه الصلاة لم يتم تشغيلها في هذه الدقيقة
+            if (prayerName && triggerKey !== lastTriggeredTime) {
+                console.log(`⏰ ⏰ ⏰ ⏰ ⏰ وقت صلاة ${prayerNames[prayerName]} ⏰ ⏰ ⏰ ⏰ ⏰`);
+                console.log(`📊 التفاصيل:`, {
+                    prayerName: prayerName,
+                    currentTime: currentTimeFull,
+                    prayerTime: prayerTimes[prayerName],
+                    currentPhase: state.currentPhase,
+                    isAdhanPlaying: state.isAdhanPlaying,
+                    currentSeconds: currentSeconds,
+                    triggerKey: triggerKey,
+                    lastTriggeredTime: lastTriggeredTime
+                });
+                
+                // تحديث lastTriggeredTime فوراً لمنع التكرار
+                lastTriggeredTime = triggerKey;
+                lastTriggeredPrayer = prayerName;
+                
+                console.log('🚀 بدء عملية تشغيل الأذان...');
+                
+                // استدعاء triggerAdhan مباشرة بدون انتظار تفعيل الصوت
+                // triggerAdhan ستحاول تفعيل الصوت داخلياً
+                console.log('🎯 استدعاء triggerAdhan مباشرة...');
+                triggerAdhan(prayerName);
+            } else if (prayerName && triggerKey === lastTriggeredTime) {
+                // تم تشغيل الأذان بالفعل في هذه الدقيقة
+                if (currentSeconds === 0 || currentSeconds === 1) {
+                    console.log(`ℹ️ الأذان تم تشغيله بالفعل في هذه الدقيقة للصلاة ${prayerNames[prayerName]}`);
+                }
+            }
+        }
+        
+        function triggerAdhan(prayerName) {
+            console.log(`🚀🚀🚀 triggerAdhan() - صلاة: ${prayerName} 🚀🚀🚀`);
+            
+            if (!prayerName) {
+                console.error('❌ لا يوجد اسم صلاة!');
+                return;
+            }
+            
+            state.activePrayer = prayerName;
+            state.currentPhase = 'adhan';
+            
+            console.log('✅ تم تحديث الحالة:', {
+                activePrayer: state.activePrayer,
+                currentPhase: state.currentPhase
+            });
+            
+            // عرض صورة الأذان فوراً في أول ثانية
+            console.log('🖼️ عرض شاشة الأذان...');
+            renderAdhan();
+            
+            // التأكد من وجود ملفات الأذان
+            let adhanFile = '';
+            if (prayerName === 'fajr') {
+                adhanFile = state.settings.fajrAdhanSound || 'audio/audio_fajr.mp3';
+            } else {
+                adhanFile = state.settings.adhanSound || 'audio/audio_dhar.mp3';
+            }
+            
+            console.log(`🎵 سيتم تشغيل ملف الأذان: ${adhanFile}`, {
+                hasFajrSound: !!state.settings.fajrAdhanSound,
+                hasRegularSound: !!state.settings.adhanSound,
+                isFajr: prayerName === 'fajr'
+            });
+            
+            // التأكد من وجود عنصر الصوت
+            const audioRef = document.getElementById('audioRef');
+            if (!audioRef) {
+                console.error('❌ audioRef غير موجود!');
+                // حتى لو لم يكن هناك audioRef، نبدأ العد التنازلي بعد مدة الأذان
+                const adhanDuration = (state.settings.adhanDurationMinutes * 60 + state.settings.adhanDurationSeconds) * 1000;
+                setTimeout(() => {
+                    console.log('⏰ انتهت مدة الأذان (بدون صوت) - بدء الإقامة');
+                    startIqamaCountdown();
+                }, adhanDuration);
+                return;
+            }
+            
+            // استدعاء startAdhan مباشرة - ستحاول تفعيل الصوت داخلياً إذا لزم الأمر
+            console.log('🎯 استدعاء startAdhan مباشرة...');
+            startAdhan();
+        }
+
+        function checkIqamaCountdown() {
+            if (state.currentPhase === 'iqamaCountdown' && state.iqamaEndTime) {
+                if (new Date() >= state.iqamaEndTime) {
+                    state.iqamaEndTime = null;
+                    startPhoneImage();
+                }
+            }
+        }
+
+        // ==================== ADHAN LOGIC ====================
+        function startAdhan() {
+            console.log('🔊🔊🔊 بدء دالة startAdhan() 🔊🔊🔊');
+            console.log('📊 حالة الأذان:', {
+                isAdhanPlaying: state.isAdhanPlaying,
+                activePrayer: state.activePrayer,
+                currentPhase: state.currentPhase,
+                isMuted: state.settings.isMuted,
+                volume: state.settings.volume,
+                audioUnlocked: state.audioUnlocked
+            });
+            
+            if (state.isAdhanPlaying) {
+                console.log('⚠️ الأذان قيد التشغيل بالفعل - إيقاف');
+                return;
+            }
+            
+            if (!state.activePrayer) {
+                console.error('❌ لا يوجد صلاة نشطة - لا يمكن تشغيل الأذان');
+                return;
+            }
+            
+            state.isAdhanPlaying = true;
+            console.log('✅ تم تعيين isAdhanPlaying = true');
+            
+            // التأكد من عرض صورة الأذان (تم عرضها بالفعل في triggerAdhan، لكن نعيد التأكد)
+            if (state.currentPhase === 'adhan') {
+                console.log('🖼️ إعادة عرض شاشة الأذان...');
+                renderAdhan();
+            }
+            
+            const prayerName = state.activePrayer;
+            let adhanFile = '';
+            if (prayerName === 'fajr') {
+                adhanFile = state.settings.fajrAdhanSound || 'audio/audio_fajr.mp3';
+            } else {
+                adhanFile = state.settings.adhanSound || 'audio/audio_dhar.mp3';
+            }
+            
+            console.log('🎵 معلومات الأذان:', {
+                prayerName: prayerName,
+                adhanFile: adhanFile ? adhanFile.substring(0, 100) + '...' : 'لا يوجد ملف',
+                hasFajrSound: !!state.settings.fajrAdhanSound,
+                hasRegularSound: !!state.settings.adhanSound,
+                fileLength: adhanFile ? adhanFile.length : 0,
+                isDataURL: adhanFile ? adhanFile.startsWith('data:') : false,
+                fajrSoundLength: state.settings.fajrAdhanSound ? state.settings.fajrAdhanSound.length : 0,
+                regularSoundLength: state.settings.adhanSound ? state.settings.adhanSound.length : 0
+            });
+            
+            const adhanDuration = (state.settings.adhanDurationMinutes * 60 + state.settings.adhanDurationSeconds) * 1000;
+            console.log(`⏱️ مدة الأذان: ${state.settings.adhanDurationMinutes} دقيقة و ${state.settings.adhanDurationSeconds} ثانية = ${adhanDuration}ms`);
+            
+            const audioRef = document.getElementById('audioRef');
+            console.log('🔊 معلومات audio element:', {
+                audioRefExists: !!audioRef,
+                audioUnlocked: state.audioUnlocked,
+                isMuted: state.settings.isMuted,
+                volume: state.settings.volume
+            });
+            
+            if (!audioRef) {
+                console.error('❌ audioRef غير موجود!');
+                setTimeout(() => startIqamaCountdown(), adhanDuration);
+                return;
+            }
+            
+            // محاولة تشغيل الأذان حتى لو كان الصوت معطلاً (لكن سنعرض الشاشة)
+            if (adhanFile) {
+                console.log('🎵 محاولة تشغيل الأذان...', {
+                    isMuted: state.settings.isMuted,
+                    hasFile: !!adhanFile,
+                    filePath: adhanFile.substring(0, 100),
+                    audioUnlocked: state.audioUnlocked
+                });
+                
+                // التأكد من تفعيل الصوت قبل التشغيل
+                // نبدأ تشغيل الأذان مباشرة - الصوت سيتم تفعيله تلقائياً عند التشغيل
+                console.log('🎵 بدء تشغيل الأذان مباشرة...');
+                playAdhanAudio();
+            } else {
+                console.log('🔇 لا يوجد ملف أذان - الانتظار لمدة الأذان ثم بدء الإقامة');
+                setTimeout(() => {
+                    console.log('⏰ انتهت مدة الأذان (بدون ملف) - بدء الإقامة');
+                    startIqamaCountdown();
+                }, adhanDuration);
+            }
+            
+            // دالة مساعدة لتشغيل الصوت
+            function playAdhanAudio() {
+                console.log('🎵 بدء تشغيل ملف الأذان...');
+                
+                // تنظيف الأحداث السابقة
+                audioRef.onended = null;
+                audioRef.onerror = null;
+                audioRef.onloadstart = null;
+                
+                // تعيين المصدر والإعدادات
+                console.log('📁 تعيين ملف الأذان:', {
+                    adhanFileType: typeof adhanFile,
+                    adhanFileLength: adhanFile ? adhanFile.length : 0,
+                    isDataURL: adhanFile ? adhanFile.startsWith('data:') : false,
+                    preview: adhanFile ? adhanFile.substring(0, 50) + '...' : 'لا يوجد ملف'
+                });
+                
+                audioRef.src = adhanFile;
+                audioRef.currentTime = 0;
+                audioRef.volume = state.settings.volume;
+                // التأكد من أن الصوت غير معطّل
+                audioRef.muted = false; // نضبطه على false دائماً للتأكد من التشغيل
+                
+                console.log('🔊 إعدادات الصوت النهائية:', {
+                    volume: audioRef.volume,
+                    muted: audioRef.muted,
+                    src: audioRef.src ? (audioRef.src.length > 100 ? audioRef.src.substring(0, 100) + '...' : audioRef.src) : 'لا يوجد',
+                    srcLength: audioRef.src ? audioRef.src.length : 0,
+                    audioUnlocked: state.audioUnlocked,
+                    isMuted: state.settings.isMuted
+                });
+                
+                // إضافة رسائل توضيحية
+                console.log(`🎵 معلومات ملف الأذان: ${adhanFile}`);
+                console.log(`🔊 إعدادات الصوت: حجم=${audioRef.volume}, كتم=${audioRef.muted}`);
+                
+                // محاولة تحميل الملف أولاً
+                const loadPromise = audioRef.load();
+                if (loadPromise) {
+                    loadPromise.catch(e => {
+                        console.error('❌ خطأ في تحميل ملف الأذان:', e);
+                    });
+                }
+                
+                // إعداد معالجات الأحداث
+                audioRef.onended = () => {
+                    console.log('🎵 ✅ انتهى الأذان الصوتي - بدء العد التنازلي للإقامة');
+                    state.isAdhanPlaying = false;
+                    startIqamaCountdown();
+                };
+                
+                audioRef.onerror = (e) => {
+                    console.error('❌ خطأ في تشغيل الأذان:', e);
+                    console.error('❌ تفاصيل الخطأ:', {
+                        error: audioRef.error,
+                        errorCode: audioRef.error ? audioRef.error.code : null,
+                        errorMessage: audioRef.error ? audioRef.error.message : null,
+                        src: audioRef.src
+                    });
+                    state.isAdhanPlaying = false;
+                    setTimeout(() => startIqamaCountdown(), adhanDuration);
+                };
+                
+                audioRef.onloadstart = () => {
+                    console.log('📥 بدء تحميل ملف الأذان...');
+                };
+                
+                audioRef.oncanplay = () => {
+                    console.log('✅ ملف الأذان جاهز للتشغيل');
+                };
+                
+                // محاولة التشغيل
+                const playPromise = audioRef.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('✅ ✅ ✅ تم تشغيل الأذان بنجاح! ✅ ✅ ✅');
+                        console.log('🎵 الأذان يعمل الآن:', {
+                            currentTime: audioRef.currentTime,
+                            duration: audioRef.duration,
+                            volume: audioRef.volume,
+                            muted: audioRef.muted
+                        });
+                    }).catch((e) => {
+                        console.error('❌ فشل تشغيل الأذان:', e);
+                        console.error('❌ تفاصيل الخطأ:', {
+                            name: e.name,
+                            message: e.message,
+                            stack: e.stack
+                        });
+                        state.isAdhanPlaying = false;
+                        console.log(`⏳ الانتظار لمدة ${adhanDuration / 1000} ثانية ثم بدء الإقامة`);
+                        setTimeout(() => startIqamaCountdown(), adhanDuration);
+                    });
+                } else {
+                    console.warn('⚠️ play() لم يُرجع promise');
+                    state.isAdhanPlaying = false;
+                    setTimeout(() => startIqamaCountdown(), adhanDuration);
+                }
+            }
+        }
+
+        function startIqamaCountdown() {
+            state.isAdhanPlaying = false;
+            const prayerName = state.activePrayer;
+            const duration = state.settings.iqamaCountdown[prayerName] || 0;
+            
+            if (duration <= 0) {
+                startPhoneImage();
+                return;
+            }
+            
+            state.currentPhase = 'iqamaCountdown';
+            state.iqamaEndTime = new Date(Date.now() + duration * 60 * 1000);
+            renderIqamaCountdown();
+        }
+
+        function startPhoneImage() {
+            state.currentPhase = 'phoneImage';
+            renderPhoneImage();
+            
+            const phoneImageDuration = (state.settings.phoneImageDurationMinutes * 60 + state.settings.phoneImageDurationSeconds) * 1000;
+
+            console.log(`⏰ بدء عرض صورة الهاتف لمدة: ${state.settings.phoneImageDurationMinutes} دقيقة و ${state.settings.phoneImageDurationSeconds} ثانية`);
+
+            // التأكد من إلغاء أي مؤقت سابق
+            if (state.phoneImageTimer) {
+                clearTimeout(state.phoneImageTimer);
+            }
+            
+            if (phoneImageDuration > 0) {
+                // حفظ المؤقت للإمكانية إلغاؤه لاحقًا
+                state.phoneImageTimer = setTimeout(() => {
+                    console.log('⏰ انتهت مدة عرض صورة الهاتف - الانتقال إلى الأذكار');
+                    startAzkar();
+                }, phoneImageDuration);
+            } else {
+                console.log('⏰ مدة عرض صورة الهاتف صفرية - الانتقال الفوري إلى الأذكار');
+                startAzkar();
+            }
+        }
+
+        function startAzkar() {
+            state.currentPhase = 'azkar';
+            state.currentAzkarIndex = 0;
+            renderAzkar();
+            
+            const azkarDuration = (state.settings.azkarDurationMinutes * 60 + state.settings.azkarDurationSeconds) * 1000;
+            const displayInterval = azkarDuration > 0 ? azkarDuration / azkarAfterPrayer.length : 15000;
+            
+            if (state.azkarIntervalRef) {
+                clearInterval(state.azkarIntervalRef);
+            }
+            
+            state.azkarIntervalRef = setInterval(() => {
+                state.currentAzkarIndex++;
+                if (state.currentAzkarIndex >= azkarAfterPrayer.length) {
+                    clearInterval(state.azkarIntervalRef);
+                    setTimeout(() => resetToIdle(), 2000);
+                } else {
+                    renderAzkar();
+                }
+            }, displayInterval);
+        }
+
+        function resetToIdle() {
+            state.currentPhase = 'idle';
+            state.activePrayer = null;
+            state.iqamaEndTime = null;
+            state.currentAzkarIndex = 0;
+            state.isAdhanPlaying = false;
+            
+            if (state.phaseTimeoutRef) {
+                clearTimeout(state.phaseTimeoutRef);
+                state.phaseTimeoutRef = null;
+            }
+            if (state.azkarIntervalRef) {
+                clearInterval(state.azkarIntervalRef);
+                state.azkarIntervalRef = null;
+            }
+            
+            renderMainScreen();
+        }
+
+        function skipToNextPhase() {
+            if (state.currentPhase === 'adhan') {
+                if (state.activePrayer) startIqamaCountdown();
+            } else if (state.currentPhase === 'iqamaCountdown') {
+                state.iqamaEndTime = null;
+                startPhoneImage();
+            } else if (state.currentPhase === 'phoneImage') {
+                startAzkar();
+            } else if (state.currentPhase === 'azkar') {
+                resetToIdle();
+            }
+        }
+
+        // ==================== RENDERING FUNCTIONS ====================
+        function renderAdhan() {
+            const hasImage = state.settings.adhanImage && state.settings.adhanImage.length > 0;
+            const positionClass = state.settings.adhanTextPosition === 'top' ? 'justify-start' : 
+                                 state.settings.adhanTextPosition === 'bottom' ? 'justify-end' : 'justify-center';
+            const activePrayerName = state.activePrayer ? prayerNames[state.activePrayer] : '';
+            
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="min-h-screen relative flex flex-col" style="background-color: ${hasImage ? 'transparent' : '#101828'}; background-image: ${hasImage ? `url(${state.settings.adhanImage})` : 'none'}; background-size: cover; background-position: center; background-repeat: no-repeat;">
+                    <div class="absolute inset-0 bg-black/70"></div>
+                    <button onclick="skipToNextPhase()" class="absolute top-6 right-6 z-50 bg-red-600/80 hover:bg-red-700 text-white text-5xl font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-2xl transition-all hover:scale-110" title="اضغط للخروج">×</button>
+                    <div class="relative z-10 flex flex-col items-center text-center gap-10 px-6 py-12 flex-1 ${positionClass}">
+                        <div class="max-w-4xl w-full mx-auto flex flex-col items-center gap-10">
+                            <span class="text-6xl md:text-7xl font-bold text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.9)]">الله أكبر</span>
+                            <h2 class="text-5xl md:text-6xl font-bold text-white drop-shadow-[0_0_20px_rgba(255,255,255,0.9)]">حان الآن وقت أذان ${activePrayerName || '...'}</h2>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderIqamaCountdown() {
+            const hasBackgroundImage = state.settings.iqamaBackgroundImage && state.settings.iqamaBackgroundImage.length > 0;
+            const countdown = calculateIqamaCountdown();
+            const activePrayerName = state.activePrayer ? prayerNames[state.activePrayer] : '';
+            
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="min-h-screen text-white flex flex-col justify-center items-center font-sans relative" style="background-color: ${hasBackgroundImage ? 'transparent' : state.settings.iqamaBackgroundColor}; background-image: ${hasBackgroundImage ? `url(${state.settings.iqamaBackgroundImage})` : 'none'}; background-size: cover; background-position: center; background-repeat: no-repeat;">
+                    <button onclick="skipToNextPhase()" class="absolute top-6 right-6 z-50 bg-red-600/80 hover:bg-red-700 text-white text-5xl font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-2xl transition-all hover:scale-110" title="اضغط للخروج">×</button>
+                    <div class="flex-grow flex flex-col justify-center items-center text-center p-8">
+                        <h2 class="text-6xl sm:text-7xl md:text-8xl font-bold mb-8" style="color: ${state.settings.colors.iqamaCountdownTextColor}">إقامة صلاة ${activePrayerName}</h2>
+                        <div id="iqama-countdown-display" class="font-mono text-[12vw] sm:text-[15vw] font-bold tracking-widest" style="text-shadow: 0 0 25px #fff; color: ${state.settings.colors.iqamaCountdownTextColor}">${countdown || '00:00'}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPhoneImage() {
+            const hasBackgroundImage = state.settings.phoneImage && state.settings.phoneImage.length > 0;
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="min-h-screen flex items-center justify-center relative" style="background-color: ${hasBackgroundImage ? 'transparent' : '#000000'}; background-image: ${hasBackgroundImage ? `url(${state.settings.phoneImage})` : 'none'}; background-size: cover; background-position: center; background-repeat: no-repeat;">
+                    <button onclick="skipToNextPhase()" class="absolute top-6 right-6 z-50 bg-red-600/80 hover:bg-red-700 text-white text-5xl font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-2xl transition-all hover:scale-110" title="اضغط للخروج">×</button>
+                    ${!hasBackgroundImage ? 
+                        `<div class="text-white text-6xl font-bold text-center p-8">
+                            <p>الرجاء إغلاق الهاتف</p>
+                            <p class="text-4xl mt-8">📵</p>
+                        </div>` : ''
+                    }
+                    }
+                </div>
+            `;
+        }
+
+        function renderAzkar() {
+            const currentAzkar = azkarAfterPrayer[state.currentAzkarIndex % azkarAfterPrayer.length];
+            const hasBackgroundImage = state.settings.azkarBackgroundImage && state.settings.azkarBackgroundImage.length > 0;
+            
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="min-h-screen text-white flex items-center justify-center p-8 relative bg-cover bg-center" style="background-image: ${hasBackgroundImage ? `url(${state.settings.azkarBackgroundImage})` : 'none'}; background-color: ${hasBackgroundImage ? 'transparent' : '#1e40af'};">
+                    <div class="absolute inset-0 bg-black/70"></div>
+                    <button onclick="skipToNextPhase()" class="absolute top-6 right-6 z-50 bg-red-600/80 hover:bg-red-700 text-white text-5xl font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-2xl transition-all hover:scale-110" title="اضغط للخروج">×</button>
+                    <div class="max-w-4xl text-center z-10">
+                        <h2 class="text-5xl font-bold mb-12" style="color: ${state.settings.colors.azkarTextColor}">أذكار ما بعد الصلاة</h2>
+                        <p class="text-5xl leading-relaxed whitespace-pre-line font-semibold" style="color: ${state.settings.colors.azkarTextColor}">${currentAzkar}</p>
+                        <div class="mt-12 text-xl opacity-70" style="color: ${state.settings.colors.azkarTextColor}">(${state.currentAzkarIndex + 1} / ${azkarAfterPrayer.length})</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function calculateIqamaCountdown() {
+            if (!state.iqamaEndTime) return null;
+            const diff = state.iqamaEndTime.getTime() - state.currentTime.getTime();
+            if (diff <= 0) return '00:00';
+            const minutes = Math.floor(diff / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function calculateNextPrayer() {
+            const toMinutes = (s) => {
+                if (!s || !s.includes(':')) return null;
+                const [hStr, mStr] = s.split(':');
+                const h = parseInt(hStr, 10);
+                const m = parseInt(mStr, 10);
+                if (Number.isNaN(h) || Number.isNaN(m)) return null;
+                return h * 60 + m;
+            };
+
+            const currentMinutes = state.currentTime.getHours() * 60 + state.currentTime.getMinutes();
+            const currentSeconds = state.currentTime.getSeconds();
+            
+            const schedule = PRAYER_ORDER
+                .map(name => ({ name, min: toMinutes(state.settings.prayerTimes[name]) }))
+                .filter(p => p.min != null);
+
+            let next = schedule.find(p => p.min > currentMinutes);
+
+            if (!next) {
+                const fajrMin = toMinutes(state.settings.prayerTimes.fajr);
+                if (fajrMin == null) {
+                    return { nextPrayerName: '...', countdown: '--:--:--' };
+                }
+                
+                const diffSec = ((fajrMin + 1440) * 60) - (currentMinutes * 60 + currentSeconds);
+                const hours = Math.floor(diffSec / 3600);
+                const minutes = Math.floor((diffSec % 3600) / 60);
+                const seconds = diffSec % 60;
+                
+                return {
+                    nextPrayerName: prayerNames.fajr,
+                    countdown: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
+                };
+            }
+
+            const diffSec = (next.min * 60) - (currentMinutes * 60 + currentSeconds);
+            const hours = Math.floor(diffSec / 3600);
+            const minutes = Math.floor((diffSec % 3600) / 60);
+            const seconds = diffSec % 60;
+
+            return {
+                nextPrayerName: prayerNames[next.name],
+                countdown: `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`,
+            };
+        }
+
+        function renderMainScreen() {
+            const { nextPrayerName, countdown } = calculateNextPrayer();
+            const nowTz = state.currentTime;
+            
+            const hour = String(nowTz.getHours()).padStart(2, '0');
+            const minute = String(nowTz.getMinutes()).padStart(2, '0');
+            const second = String(nowTz.getSeconds()).padStart(2, '0');
+            const dayPeriod = state.settings.timeFormat === '12h' ? 
+                (nowTz.getHours() >= 12 ? 'PM' : 'AM') : null;
+            const hour12 = state.settings.timeFormat === '12h' ? 
+                (nowTz.getHours() % 12 || 12) : nowTz.getHours();
+            
+            // التحقق من وجود الخلفية
+            const hasBackground = state.settings.backgroundImage && state.settings.backgroundImage.length > 0;
+            const backgroundStyle = hasBackground ? 
+                `background-image: url(${state.settings.backgroundImage}); background-size: cover; background-position: center; background-repeat: no-repeat;` : 
+                'background-color: #263138;';
+            
+            console.log('🎨 عرض الشاشة الرئيسية:', {
+                hasBackgroundImage: hasBackground,
+                backgroundImageLength: state.settings.backgroundImage ? state.settings.backgroundImage.length : 0,
+                backgroundImagePreview: state.settings.backgroundImage ? state.settings.backgroundImage.substring(0, 50) + '...' : 'none'
+            });
+            
+            const container = document.getElementById('app-container');
+            container.innerHTML = `
+                <div class="bg-cover bg-center min-h-screen flex flex-col p-4 sm:p-6 lg:p-8 font-sans transition-all duration-1000 relative" style="${backgroundStyle} color: ${state.settings.colors.textColor};">
+                    <div class="absolute inset-0 bg-black/60 -z-10"></div>
+                    <header class="flex justify-between items-start">
+                        <div class="flex items-center gap-4 text-2xl">
+                            ${state.settings.showWeather ? `
+                                <div class="flex items-center gap-2">
+                                    <span>${state.settings.temperature}°</span>
+                                    <svg class="text-yellow-400" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                                </div>
+                            ` : ''}
+                            ${state.isOffline ? `<svg class="text-red-400" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="غير متصل"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><line x1="1.42" y1="1.42" x2="23" y2="23"></line><path d="M23 12.55a11.93 11.93 0 0 1-2.33 3.5"></path><path d="M2 2l20 20"></path></svg>` : ''}
+                        </div>
+                        <h1 class="text-4xl md:text-5xl font-bold text-center flex-grow">${state.settings.mosqueName}</h1>
+                        <button onclick="openSettings()" class="bg-transparent hover:bg-accent p-2 rounded-md" aria-label="Open settings">
+                            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+                        </button>
+                    </header>
+
+                    <main class="flex-grow flex flex-col justify-center items-center text-center my-4">
+                        <div class="flex justify-around items-center w-full max-w-5xl">
+                            <div class="flex flex-col justify-center rounded-2xl p-4 text-center shadow-lg border border-blue-600/50" style="width: 235px; height: 135px; background-color: ${state.settings.colors.shuruqBoxColor};">
+                                <h3 class="text-2xl font-bold">الشروق</h3>
+                                <p class="text-3xl font-mono font-bold">${formatPrayerTime(state.settings.shuruqTime, state.settings.timeFormat, nowTz)}</p>
+                            </div>
+
+                            <div class="rounded-2xl p-4 md:p-6 shadow-2xl border border-blue-500/50 w-[90%] max-w-2xl mx-4" style="background-color: ${state.settings.colors.clockBoxColor};">
+                                <div class="flex justify-center items-baseline">
+                                    <span class="text-8xl md:text-9xl font-bold tracking-tighter" style="text-shadow: 0 0 15px #fff;">${hour12}:${minute}</span>
+                                    <div class="flex flex-col items-start ml-2 md:ml-4">
+                                        <span class="text-3xl md:text-5xl font-bold" style="text-shadow: 0 0 10px #fff;">${second}</span>
+                                        ${dayPeriod ? `<span class="text-2xl md:text-4xl font-bold" style="text-shadow: 0 0 8px #fff;">${dayPeriod}</span>` : ''}
+                                    </div>
+                                </div>
+                                <div class="mt-2 text-lg md:text-xl space-y-1">
+                                    <p>${formatHijriDate(nowTz)}</p>
+                                    <p>${formatGregorianDate(nowTz)}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col justify-center rounded-2xl p-4 text-center shadow-lg border border-blue-600/50" style="width: 235px; height: 135px; background-color: ${state.settings.colors.jumuahBoxColor};">
+                                <h3 class="text-2xl font-bold">الجمعة</h3>
+                                <p class="text-3xl font-mono font-bold">${formatPrayerTime(state.settings.jumuahTime, state.settings.timeFormat, nowTz)}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-8 text-3xl font-semibold flex flex-col items-center gap-2">
+                            ${state.isFetchingTimes ? `
+                                <div class="flex items-center gap-3">
+                                    <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                                    <span>جاري تحديث أوقات الصلاة...</span>
+                                </div>
+                            ` : `
+                                <div class="flex items-center gap-3" style="color: ${state.settings.colors.nextPrayerTextColor};">
+                                    <svg class="text-yellow-400" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                    <span>الصلاة القادمة</span>
+                                    <svg class="text-yellow-400" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                                </div>
+                                <span class="text-5xl font-bold" style="color: ${state.settings.colors.nextPrayerTextColor};">${nextPrayerName}</span>
+                                <span class="font-mono text-4xl" style="color: ${state.settings.colors.nextPrayerTextColor};">تبقى ${countdown}</span>
+                            `}
+                        </div>
+                    </main>
+                    
+                    <footer class="w-full max-w-7xl mx-auto mt-auto">
+                        <div class="grid grid-cols-5 gap-3 md:gap-6 justify-items-center max-w-7xl mx-auto">
+                            ${PRAYER_ORDER.map((key) => {
+                                const isNext = prayerNames[key] === nextPrayerName && !state.isFetchingTimes;
+                                return `
+                                    <div class="rounded-2xl p-3 text-center shadow-lg border border-blue-600/50 transition-all flex flex-col justify-center ${isNext ? 'border-yellow-400 border-2 scale-105' : ''}" style="width: 200px; height: 110px; background-color: ${state.settings.colors.prayerBoxesColor};">
+                                        <h3 class="text-2xl font-bold">${prayerNames[key]}</h3>
+                                        <p class="text-3xl font-mono font-bold">${formatPrayerTime(state.settings.prayerTimes[key], state.settings.timeFormat, nowTz)}</p>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </footer>
+                </div>
+            `;
+        }
+
+        function updateUI() {
+            if (state.currentPhase === 'idle') {
+                renderMainScreen();
+                // بدء مراقبة أوقات الصلاة عند تحديث الواجهة
+                startPrayerMonitoring();
+            } else if (state.currentPhase === 'iqamaCountdown') {
+                // Update countdown every second
+                const countdown = calculateIqamaCountdown();
+                const countdownEl = document.getElementById('iqama-countdown-display');
+                if (countdownEl) {
+                    countdownEl.textContent = countdown || '00:00';
+                }
+            } else if (state.currentPhase === 'azkar') {
+                // Azkar doesn't need frequent updates
+            }
+        }
+
+        // ==================== SETTINGS PANEL ====================
+        function openSettings() {
+            state.isPanelOpen = true;
+            document.getElementById('settings-overlay').classList.add('open');
+            document.getElementById('settings-panel').classList.add('open');
+            renderSettingsPanel();
+        }
+
+        function closeSettings() {
+            state.isPanelOpen = false;
+            document.getElementById('settings-overlay').classList.remove('open');
+            document.getElementById('settings-panel').classList.remove('open');
+        }
+
+        function renderSettingsPanel() {
+            const content = document.getElementById('settings-content');
+            const localSettings = JSON.parse(JSON.stringify(state.settings));
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <!-- General Settings -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('general')">معلومات عامة ▼</h3>
+                        <div id="accordion-general" class="accordion-content open">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">اسم المسجد</label>
+                                    <input type="text" id="mosque-name" value="${localSettings.mosqueName}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">الدولة</label>
+                                    <select id="country" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="updateCities()">
+                                        ${countries.map(c => `<option value="${c}" ${c === localSettings.country ? 'selected' : ''}>${c}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">المدينة</label>
+                                    <div class="flex gap-2">
+                                        <select id="city" class="flex-1 px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="updatePrayerTimesOnLocationChange()">
+                                            ${(citiesByCountry[localSettings.country] || []).map(c => `<option value="${c}" ${c === localSettings.city ? 'selected' : ''}>${c}</option>`).join('')}
+                                        </select>
+                                        <button onclick="fetchPrayerTimes(true)" class="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90" id="refresh-btn">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Iqama Countdown -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('iqama')">أوقات الإقامة ▼</h3>
+                        <div id="accordion-iqama" class="accordion-content">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">صورة خلفية شاشة الإقامة</label>
+                                    <input type="file" id="iqama-background-image" accept="image/*" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="handleFileChange('iqamaBackgroundImage', this)" />
+                                </div>
+                                ${PRAYER_ORDER.map(prayer => `
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">${prayerNames[prayer]} (بالدقائق)</label>
+                                        <input type="number" id="iqama-${prayer}" value="${localSettings.iqamaCountdown[prayer]}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prayer Times -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('prayer-times')">أوقات الصلاة (يدوي) ▼</h3>
+                        <div id="accordion-prayer-times" class="accordion-content">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">الشروق</label>
+                                    <input type="time" id="shuruq-time" value="${localSettings.shuruqTime}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                    <label class="block text-sm font-medium mb-2 mt-2">تعديل الشروق (دقائق)</label>
+                                    <input type="number" id="shuruq-offset" value="${localSettings.shuruqOffset || 0}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">الجمعة</label>
+                                    <input type="time" id="jumuah-time" value="${localSettings.jumuahTime}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                    <label class="block text-sm font-medium mb-2 mt-2">تعديل الجمعة (دقائق)</label>
+                                    <input type="number" id="jumuah-offset" value="${localSettings.jumuahOffset || 0}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                                ${PRAYER_ORDER.map(prayer => `
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">${prayerNames[prayer]}</label>
+                                        <input type="time" id="prayer-${prayer}" value="${localSettings.prayerTimes[prayer]}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                        <label class="block text-sm font-medium mb-2 mt-2">تعديل ${prayerNames[prayer]} (دقائق)</label>
+                                        <input type="number" id="prayer-offset-${prayer}" value="${(localSettings.prayerTimeOffsets && localSettings.prayerTimeOffsets[prayer]) || 0}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Display Settings -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('display')">العرض والمظهر ▼</h3>
+                        <div id="accordion-display" class="accordion-content">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium">استخدام تنسيق 24 ساعة</label>
+                                    <input type="checkbox" id="time-format" ${localSettings.timeFormat === '24h' ? 'checked' : ''} class="w-4 h-4" />
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm font-medium">إظهار الطقس</label>
+                                    <input type="checkbox" id="show-weather" ${localSettings.showWeather ? 'checked' : ''} class="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">درجة الحرارة (مئوية)</label>
+                                    <input type="number" id="temperature" value="${localSettings.temperature}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" disabled />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مدة التعتيم بعد الأذان (بالدقائق)</label>
+                                    <input type="number" id="dim-duration" value="${localSettings.dimDuration}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">صورة الخلفية</label>
+                                    <input type="file" id="background-image" accept="image/*" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="handleFileChange('backgroundImage', this)" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Colors -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('colors')">تخصيص الألوان ▼</h3>
+                        <div id="accordion-colors" class="accordion-content">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">لون الخط العام</label>
+                                    <input type="color" id="text-color" value="${localSettings.colors.textColor}" class="w-full h-10 p-1 border border-border rounded-md" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">لون نص الصلاة القادمة</label>
+                                    <input type="color" id="next-prayer-text-color" value="${localSettings.colors.nextPrayerTextColor}" class="w-full h-10 p-1 border border-border rounded-md" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">لون نص العد التنازلي للإقامة</label>
+                                    <input type="color" id="iqama-countdown-text-color" value="${localSettings.colors.iqamaCountdownTextColor}" class="w-full h-10 p-1 border border-border rounded-md" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">لون نص الأذكار</label>
+                                    <input type="color" id="azkar-text-color" value="${localSettings.colors.azkarTextColor}" class="w-full h-10 p-1 border border-border rounded-md" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">لون خلفية مربع الشروق</label>
+                                    <input type="color" id="shuruq-box-color" value="${localSettings.colors.shuruqBoxColor}" class="w-full h-10 p-1 border border-border rounded-md" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">لون خلفية مربع الساعة</label>
+                                    <input type="color" id="clock-box-color" value="${localSettings.colors.clockBoxColor}" class="w-full h-10 p-1 border border-border rounded-md" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">لون خلفية مربع الجمعة</label>
+                                    <input type="color" id="jumuah-box-color" value="${localSettings.colors.jumuahBoxColor}" class="w-full h-10 p-1 border border-border rounded-md" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">لون خلفية مربعات الصلاة</label>
+                                    <input type="color" id="prayer-boxes-color" value="${localSettings.colors.prayerBoxesColor}" class="w-full h-10 p-1 border border-border rounded-md" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Settings -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('audio')">إعدادات الصوت ▼</h3>
+                        <div id="accordion-audio" class="accordion-content">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">ملف صوت أذان الصلوات (الظهر، العصر، المغرب، العشاء)</label>
+                                    <input type="file" id="adhan-sound" accept="audio/*" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="handleFileChange('adhanSound', this)" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">ملف صوت أذان الفجر (منفصل)</label>
+                                    <input type="file" id="fajr-adhan-sound" accept="audio/*" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="handleFileChange('fajrAdhanSound', this)" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مستوى الصوت</label>
+                                    <div class="flex items-center gap-2">
+                                        <button onclick="toggleMute()" class="p-2 bg-input border border-border rounded-md hover:bg-accent">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="mute-icon">
+                                                ${localSettings.isMuted ? '<line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line>' : '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>'}
+                                            </svg>
+                                        </button>
+                                        <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="${localSettings.isMuted ? 0 : localSettings.volume}" class="flex-1" oninput="updateVolume(this.value)" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prayer Phases -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('phases')">مراحل الصلاة ▼</h3>
+                        <div id="accordion-phases" class="accordion-content open">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مدة الأذان - الدقائق</label>
+                                    <input type="number" id="adhan-duration-minutes" value="${localSettings.adhanDurationMinutes}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مدة الأذان - الثواني</label>
+                                    <input type="number" id="adhan-duration-seconds" value="${localSettings.adhanDurationSeconds}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">صورة شاشة الأذان</label>
+                                    <input type="file" id="adhan-image" accept="image/*" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="handleFileChange('adhanImage', this)" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">موضع نص الأذان</label>
+                                    <select id="adhan-text-position" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground">
+                                        <option value="top" ${localSettings.adhanTextPosition === 'top' ? 'selected' : ''}>أعلى الشاشة</option>
+                                        <option value="center" ${localSettings.adhanTextPosition === 'center' ? 'selected' : ''}>وسط الشاشة</option>
+                                        <option value="bottom" ${localSettings.adhanTextPosition === 'bottom' ? 'selected' : ''}>أسفل الشاشة</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">صورة إغلاق الهاتف</label>
+                                    <input type="file" id="phone-image" accept="image/*" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="handleFileChange('phoneImage', this)" />
+                                    ${localSettings.phoneImage ? `
+                                        <div class="mt-3 p-3 bg-secondary rounded-md">
+                                            <img src="${localSettings.phoneImage}" alt="معاينة صورة إغلاق الهاتف" class="w-full max-h-48 object-contain rounded mb-2" />
+                                            <button type="button" onclick="clearPhoneImage()" class="w-full bg-destructive text-destructive-foreground px-3 py-2 rounded-md text-sm hover:opacity-90">مسح الصورة</button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مدة إغلاق الهاتف - الدقائق</label>
+                                    <input type="number" id="phone-image-duration-minutes" value="${localSettings.phoneImageDurationMinutes}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" min="0" />
+                                    <p class="text-xs text-muted-foreground mt-1">المدة التي ستُعرض فيها صورة إغلاق الهاتف بعد الإقامة</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مدة إغلاق الهاتف - الثواني</label>
+                                    <input type="number" id="phone-image-duration-seconds" value="${localSettings.phoneImageDurationSeconds}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" min="0" max="59" />
+                                    <p class="text-xs text-muted-foreground mt-1">الثواني الإضافية</p>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">صورة خلفية شاشة الأذكار</label>
+                                    <input type="file" id="azkar-background-image" accept="image/*" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="handleFileChange('azkarBackgroundImage', this)" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مدة عرض الأذكار - الدقائق</label>
+                                    <input type="number" id="azkar-duration-minutes" value="${localSettings.azkarDurationMinutes}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">مدة عرض الأذكار - الثواني</label>
+                                    <input type="number" id="azkar-duration-seconds" value="${localSettings.azkarDurationSeconds}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleAccordion(id) {
+            const content = document.getElementById(`accordion-${id}`);
+            content.classList.toggle('open');
+        }
+
+        function updateCities() {
+            const country = document.getElementById('country').value;
+            const citySelect = document.getElementById('city');
+            const cities = citiesByCountry[country] || [];
+            citySelect.innerHTML = cities.map(c => `<option value="${c}">${c}</option>`).join('');
+            if (cities.length > 0) {
+                citySelect.value = cities[0];
+            }
+        }
+
+        function handleFileChange(settingKey, input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    if (event.target?.result) {
+                        state.settings[settingKey] = event.target.result;
+                        console.log(`✅ تم تحميل الملف: ${settingKey}`, {
+                            fileSize: file.size,
+                            fileType: file.type,
+                            dataLength: event.target.result.length
+                        });
+                        // حفظ فوري في localStorage للملفات المهمة
+                        try {
+                            const savedMedia = localStorage.getItem('alMoazinMediaFiles');
+                            let mediaFiles = savedMedia ? JSON.parse(savedMedia) : {};
+                            mediaFiles[settingKey] = event.target.result;
+                            localStorage.setItem('alMoazinMediaFiles', JSON.stringify(mediaFiles));
+                            console.log(`💾 تم حفظ ${settingKey} فوراً في localStorage`);
+                        } catch (e) {
+                            console.warn(`⚠️ فشل حفظ ${settingKey} فوراً:`, e);
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function toggleMute() {
+            state.settings.isMuted = !state.settings.isMuted;
+            const audioRef = document.getElementById('audioRef');
+            if (audioRef) {
+                audioRef.muted = state.settings.isMuted;
+            }
+            renderSettingsPanel();
+        }
+
+        function updateVolume(value) {
+            state.settings.volume = parseFloat(value);
+            state.settings.isMuted = value == 0;
+            const audioRef = document.getElementById('audioRef');
+            if (audioRef) {
+                audioRef.volume = state.settings.volume;
+                audioRef.muted = state.settings.isMuted;
+            }
+            const muteIcon = document.getElementById('mute-icon');
+            if (muteIcon) {
+                muteIcon.innerHTML = state.settings.isMuted ? 
+                    '<line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line>' :
+                    '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+            }
+        }
+
+        function clearPhoneImage() {
+            state.settings.phoneImage = '';
+            const phoneImageInput = document.getElementById('phone-image');
+            if (phoneImageInput) {
+                phoneImageInput.value = '';
+            }
+            try {
+                const savedMedia = localStorage.getItem('alMoazinMediaFiles');
+                let mediaFiles = savedMedia ? JSON.parse(savedMedia) : {};
+                delete mediaFiles.phoneImage;
+                localStorage.setItem('alMoazinMediaFiles', JSON.stringify(mediaFiles));
+            } catch (e) {
+                console.warn('فشل حذف الصورة من localStorage:', e);
+            }
+            renderSettingsPanel();
+        }
+
+        function fetchPrayerTimes(force) {
+            fetchPrayerTimesAndWeather(force);
+        }
+
+        function saveSettings() {
+            try {
+                console.log('💾 بدء حفظ الإعدادات...');
+                
+                // General
+                const mosqueNameEl = document.getElementById('mosque-name');
+                const countryEl = document.getElementById('country');
+                const cityEl = document.getElementById('city');
+                
+                if (mosqueNameEl) state.settings.mosqueName = mosqueNameEl.value;
+                if (countryEl) state.settings.country = countryEl.value;
+                if (cityEl) state.settings.city = cityEl.value;
+                
+                // Display
+                const timeFormatEl = document.getElementById('time-format');
+                const showWeatherEl = document.getElementById('show-weather');
+                const dimDurationEl = document.getElementById('dim-duration');
+                
+                if (timeFormatEl) state.settings.timeFormat = timeFormatEl.checked ? '24h' : '12h';
+                if (showWeatherEl) state.settings.showWeather = showWeatherEl.checked;
+                if (dimDurationEl) state.settings.dimDuration = parseInt(dimDurationEl.value) || 0;
+                
+                // Prayer Times
+                const shuruqTimeEl = document.getElementById('shuruq-time');
+                const jumuahTimeEl = document.getElementById('jumuah-time');
+                const shuruqOffsetEl = document.getElementById('shuruq-offset');
+                const jumuahOffsetEl = document.getElementById('jumuah-offset');
+                
+                if (shuruqTimeEl) state.settings.shuruqTime = shuruqTimeEl.value;
+                if (jumuahTimeEl) state.settings.jumuahTime = jumuahTimeEl.value;
+                if (shuruqOffsetEl) state.settings.shuruqOffset = parseInt(shuruqOffsetEl.value) || 0;
+                if (jumuahOffsetEl) state.settings.jumuahOffset = parseInt(jumuahOffsetEl.value) || 0;
+                
+                PRAYER_ORDER.forEach(prayer => {
+                    const prayerEl = document.getElementById(`prayer-${prayer}`);
+                    const iqamaEl = document.getElementById(`iqama-${prayer}`);
+                    const offsetEl = document.getElementById(`prayer-offset-${prayer}`);
+                    if (prayerEl) {
+                        const newTime = prayerEl.value;
+                        state.settings.prayerTimes[prayer] = newTime;
+                        console.log(`📝 حفظ وقت صلاة ${prayerNames[prayer]}: ${newTime}`);
+                    }
+                    if (iqamaEl) state.settings.iqamaCountdown[prayer] = parseInt(iqamaEl.value) || 0;
+                    if (offsetEl) state.settings.prayerTimeOffsets[prayer] = parseInt(offsetEl.value) || 0;
+                });
+                
+                console.log('📋 أوقات الصلاة المحفوظة:', state.settings.prayerTimes);
+                
+                // Colors
+                const textColorEl = document.getElementById('text-color');
+                const nextPrayerTextColorEl = document.getElementById('next-prayer-text-color');
+                const iqamaCountdownTextColorEl = document.getElementById('iqama-countdown-text-color');
+                const azkarTextColorEl = document.getElementById('azkar-text-color');
+                const shuruqBoxColorEl = document.getElementById('shuruq-box-color');
+                const clockBoxColorEl = document.getElementById('clock-box-color');
+                const jumuahBoxColorEl = document.getElementById('jumuah-box-color');
+                const prayerBoxesColorEl = document.getElementById('prayer-boxes-color');
+                
+                if (textColorEl) state.settings.colors.textColor = textColorEl.value;
+                if (nextPrayerTextColorEl) state.settings.colors.nextPrayerTextColor = nextPrayerTextColorEl.value;
+                if (iqamaCountdownTextColorEl) state.settings.colors.iqamaCountdownTextColor = iqamaCountdownTextColorEl.value;
+                if (azkarTextColorEl) state.settings.colors.azkarTextColor = azkarTextColorEl.value;
+                if (shuruqBoxColorEl) state.settings.colors.shuruqBoxColor = shuruqBoxColorEl.value;
+                if (clockBoxColorEl) state.settings.colors.clockBoxColor = clockBoxColorEl.value;
+                if (jumuahBoxColorEl) state.settings.colors.jumuahBoxColor = jumuahBoxColorEl.value;
+                if (prayerBoxesColorEl) state.settings.colors.prayerBoxesColor = prayerBoxesColorEl.value;
+                
+                // Audio
+                const audioRef = document.getElementById('audioRef');
+                if (audioRef) {
+                    audioRef.volume = state.settings.volume;
+                    audioRef.muted = state.settings.isMuted;
+                }
+                
+                // Phases
+                const adhanDurationMinutesEl = document.getElementById('adhan-duration-minutes');
+                const adhanDurationSecondsEl = document.getElementById('adhan-duration-seconds');
+                const adhanTextPositionEl = document.getElementById('adhan-text-position');
+                const phoneImageDurationMinutesEl = document.getElementById('phone-image-duration-minutes');
+                const phoneImageDurationSecondsEl = document.getElementById('phone-image-duration-seconds');
+                const azkarDurationMinutesEl = document.getElementById('azkar-duration-minutes');
+                const azkarDurationSecondsEl = document.getElementById('azkar-duration-seconds');
+                
+                if (adhanDurationMinutesEl) state.settings.adhanDurationMinutes = parseInt(adhanDurationMinutesEl.value) || 0;
+                if (adhanDurationSecondsEl) state.settings.adhanDurationSeconds = parseInt(adhanDurationSecondsEl.value) || 0;
+                if (adhanTextPositionEl) state.settings.adhanTextPosition = adhanTextPositionEl.value;
+                if (phoneImageDurationMinutesEl) state.settings.phoneImageDurationMinutes = parseInt(phoneImageDurationMinutesEl.value) || 0;
+                if (phoneImageDurationSecondsEl) state.settings.phoneImageDurationSeconds = parseInt(phoneImageDurationSecondsEl.value) || 0;
+                if (azkarDurationMinutesEl) state.settings.azkarDurationMinutes = parseInt(azkarDurationMinutesEl.value) || 0;
+                if (azkarDurationSecondsEl) state.settings.azkarDurationSeconds = parseInt(azkarDurationSecondsEl.value) || 0;
+                
+                // Save to localStorage - حفظ كامل لجميع الإعدادات
+                const oldCountry = state.settings.country;
+                const oldCity = state.settings.city;
+                
+                // فصل الملفات الكبيرة عن الإعدادات الأساسية
+                const mediaFiles = {
+                    backgroundImage: state.settings.backgroundImage || '',
+                    iqamaBackgroundImage: state.settings.iqamaBackgroundImage || '',
+                    azkarBackgroundImage: state.settings.azkarBackgroundImage || '',
+                    phoneImage: state.settings.phoneImage || '',
+                    adhanImage: state.settings.adhanImage || '',
+                    adhanSound: state.settings.adhanSound || '',
+                    fajrAdhanSound: state.settings.fajrAdhanSound || ''
+                };
+                
+                // فصل مواقيت الصلاة عن الإعدادات الأساسية
+                const prayerTimesData = {
+                    prayerTimes: state.settings.prayerTimes,
+                    prayerTimeOffsets: state.settings.prayerTimeOffsets,
+                    shuruqTime: state.settings.shuruqTime,
+                    shuruqOffset: state.settings.shuruqOffset,
+                    jumuahTime: state.settings.jumuahTime,
+                    jumuahOffset: state.settings.jumuahOffset,
+                    lastUpdated: new Date().toISOString()
+                };
+
+                // إنشاء نسخة من الإعدادات بدون الملفات الكبيرة ومواقيت الصلاة
+                const essentialSettings = {
+                    mosqueName: state.settings.mosqueName,
+                    timeFormat: state.settings.timeFormat,
+                    iqamaCountdown: state.settings.iqamaCountdown,
+                    dimDuration: state.settings.dimDuration,
+                    adhanDurationMinutes: state.settings.adhanDurationMinutes,
+                    adhanDurationSeconds: state.settings.adhanDurationSeconds,
+                    phoneImageDurationMinutes: state.settings.phoneImageDurationMinutes,
+                    phoneImageDurationSeconds: state.settings.phoneImageDurationSeconds,
+                    azkarDurationMinutes: state.settings.azkarDurationMinutes,
+                    azkarDurationSeconds: state.settings.azkarDurationSeconds,
+                    country: state.settings.country,
+                    city: state.settings.city,
+                    showWeather: state.settings.showWeather,
+                    temperature: state.settings.temperature,
+                    volume: state.settings.volume,
+                    isMuted: state.settings.isMuted,
+                    adhanTextPosition: state.settings.adhanTextPosition,
+                    iqamaBackgroundColor: state.settings.iqamaBackgroundColor,
+                    colors: state.settings.colors,
+                    lastSaved: new Date().toISOString()
+                };
+                
+                try {
+                    // حفظ الإعدادات الأساسية
+                    localStorage.setItem('alMoazinClockSettings', JSON.stringify(essentialSettings));
+                    console.log('✅ تم حفظ الإعدادات الأساسية في localStorage');
+                    console.log('📋 الإعدادات المحفوظة:', essentialSettings);
+                } catch (e) {
+                    console.error('❌ فشل حفظ الإعدادات الأساسية:', e);
+                    if (e.name === 'QuotaExceededError') {
+                        alert('مساحة التخزين ممتلئة. يرجى حذف بعض البيانات أو استخدام متصفح آخر.');
+                    } else {
+                        alert('فشل حفظ الإعدادات. يرجى المحاولة مرة أخرى.');
+                    }
+                    return;
+                }
+
+                try {
+                    // حفظ مواقيت الصلاة بشكل منفصل
+                    localStorage.setItem('alMoazinPrayerTimesData', JSON.stringify(prayerTimesData));
+                    console.log('✅ تم حفظ بيانات مواقيت الصلاة في localStorage');
+                    console.log('📋 بيانات مواقيت الصلاة المحفوظة:', prayerTimesData);
+                } catch (e) {
+                    console.error('❌ فشل حفظ بيانات مواقيت الصلاة:', e);
+                    // لا نوقف العملية إذا فشل حفظ مواقيت الصلاة
+                }
+                
+                try {
+                    // حفظ الملفات والصور - دائماً نحفظ حتى لو كانت فارغة
+                    localStorage.setItem('alMoazinMediaFiles', JSON.stringify(mediaFiles));
+                    console.log('✅ تم حفظ الملفات والصور في localStorage:', {
+                        hasBackgroundImage: !!mediaFiles.backgroundImage,
+                        hasPhoneImage: !!mediaFiles.phoneImage,
+                        hasAdhanImage: !!mediaFiles.adhanImage,
+                        hasIqamaBackgroundImage: !!mediaFiles.iqamaBackgroundImage,
+                        hasAzkarBackgroundImage: !!mediaFiles.azkarBackgroundImage,
+                        hasAdhanSound: !!mediaFiles.adhanSound,
+                        hasFajrAdhanSound: !!mediaFiles.fajrAdhanSound,
+                        backgroundImageLength: mediaFiles.backgroundImage ? mediaFiles.backgroundImage.length : 0
+                    });
+                } catch (e) {
+                    console.error('❌ فشل حفظ الملفات:', e);
+                    if (e.name === 'QuotaExceededError') {
+                        console.warn('⚠️ مساحة التخزين ممتلئة - لن يتم حفظ الملفات هذه المرة');
+                        alert('تحذير: مساحة التخزين ممتلئة. بعض الملفات الكبيرة قد لا تُحفظ.');
+                    }
+                    // لا نوقف العملية إذا فشل حفظ الملفات
+                }
+                
+                console.log('✅ تم حفظ جميع الإعدادات بنجاح');
+                console.log('🔄 إعادة تحميل الشاشة الرئيسية...');
+                
+                closeSettings();
+                renderMainScreen();
+                
+                // Fetch new prayer times if location changed
+                const newCountry = state.settings.country;
+                const newCity = state.settings.city;
+                if (oldCountry !== newCountry || oldCity !== newCity) {
+                    console.log('📍 تغير الموقع - جلب مواقيت جديدة');
+                    fetchPrayerTimesAndWeather(true);
+                }
+            } catch (error) {
+                console.error('❌ خطأ في حفظ الإعدادات:', error);
+                alert('حدث خطأ أثناء حفظ الإعدادات. يرجى المحاولة مرة أخرى.');
+            }
+        }
+
+        // ==================== PRAYER TIMES FETCHING ====================
+        async function fetchPrayerTimesAndWeather(force = false) {
+            if (!state.settings.city || !state.settings.country) return;
+            
+            state.isFetchingTimes = true;
+            state.isOffline = false;
+            updateUI();
+            
+            const d = state.currentTime;
+            const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            
+            // Check cached data
+            const storedTimesData = localStorage.getItem('alMoazinPrayerTimes');
+            let useCachedData = false;
+            
+            if (storedTimesData && !force) {
+                try {
+                    const parsed = JSON.parse(storedTimesData);
+                    const { date, times, shuruq, city, country, fetchTime } = parsed;
+                    
+                    const isToday = date === today;
+                    const isSameLocation = city === state.settings.city && country === state.settings.country;
+                    const fetchAge = Date.now() - (fetchTime || 0);
+                    const maxAge = 6 * 60 * 60 * 1000;
+                    const isDataFresh = fetchAge < maxAge;
+                    
+                    if (isToday && isSameLocation && isDataFresh && times) {
+                        const offsets = state.settings.prayerTimeOffsets || { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
+                        const adjustedTimes = {
+                            fajr: applyOffsetToTime(times.fajr, offsets.fajr),
+                            dhuhr: applyOffsetToTime(times.dhuhr, offsets.dhuhr),
+                            asr: applyOffsetToTime(times.asr, offsets.asr),
+                            maghrib: applyOffsetToTime(times.maghrib, offsets.maghrib),
+                            isha: applyOffsetToTime(times.isha, offsets.isha),
+                        };
+                        const adjustedShuruq = applyOffsetToTime(shuruq, state.settings.shuruqOffset || 0);
+                        
+                        state.settings.prayerTimes = adjustedTimes;
+                        state.settings.shuruqTime = adjustedShuruq;
+                        state.settings.jumuahTime = adjustedTimes.dhuhr;
+                        useCachedData = true;
+                    }
+                } catch (e) {
+                    console.error('Error reading cached data:', e);
+                }
+            }
+            
+            if (useCachedData && !force) {
+                state.isFetchingTimes = false;
+                updateUI();
+                return;
+            }
+            
+            try {
+                const locationMapping = resolveLocationMapping(state.settings.country, state.settings.city);
+                const method = locationMapping.method ?? 23;
+                const timezonestring = locationMapping.timeZone;
+                const params = new URLSearchParams({
+                    city: locationMapping.apiCity || state.settings.city,
+                    country: locationMapping.apiCountry || state.settings.country,
+                    method: String(method),
+                });
+                if (timezonestring) params.append('timezonestring', timezonestring);
+                const url = `https://api.aladhan.com/v1/timingsByCity?${params.toString()}`;
+                const resp = await fetch(url);
+                if (!resp.ok) throw new Error(`Aladhan HTTP ${resp.status}`);
+                const data = await resp.json();
+                if (data.code !== 200 || !data.data?.timings) throw new Error('Invalid Aladhan response');
+                const t = data.data.timings;
+                const normalize = (v) => (v ? String(v).split(' ')[0] : '');
+                const basePrayerTimes = {
+                    fajr: normalize(t.Fajr),
+                    dhuhr: normalize(t.Dhuhr),
+                    asr: normalize(t.Asr),
+                    maghrib: normalize(t.Maghrib),
+                    isha: normalize(t.Isha),
+                };
+                const baseShuruq = normalize(t.Sunrise);
+                const offsets = state.settings.prayerTimeOffsets || { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
+                const newPrayerTimes = {
+                    fajr: applyOffsetToTime(basePrayerTimes.fajr, offsets.fajr),
+                    dhuhr: applyOffsetToTime(basePrayerTimes.dhuhr, offsets.dhuhr),
+                    asr: applyOffsetToTime(basePrayerTimes.asr, offsets.asr),
+                    maghrib: applyOffsetToTime(basePrayerTimes.maghrib, offsets.maghrib),
+                    isha: applyOffsetToTime(basePrayerTimes.isha, offsets.isha),
+                };
+                const newShuruq = applyOffsetToTime(baseShuruq, state.settings.shuruqOffset || 0);
+                
+                state.settings.prayerTimes = newPrayerTimes;
+                state.settings.shuruqTime = newShuruq;
+                state.settings.jumuahTime = newPrayerTimes.dhuhr;
+                
+                const prayerData = {
+                    date: today,
+                    times: basePrayerTimes,
+                    shuruq: baseShuruq,
+                    adjustedTimes: newPrayerTimes,
+                    adjustedShuruq: newShuruq,
+                    city: state.settings.city,
+                    country: state.settings.country,
+                    temperature: state.settings.temperature,
+                    method,
+                    timezonestring,
+                    fetchTime: Date.now(),
+                    apiVersion: '1.0'
+                };
+                
+                localStorage.setItem('alMoazinPrayerTimes', JSON.stringify(prayerData));
+            } catch (error) {
+                state.isOffline = true;
+                console.error('Failed to fetch prayer times:', error);
+            } finally {
+                state.isFetchingTimes = false;
+                updateUI();
+                // بدء مراقبة أوقات الصلاة بعد تحديثها
+                startPrayerMonitoring();
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function setupEventListeners() {
+            document.getElementById('save-settings').addEventListener('click', saveSettings);
+            document.getElementById('update-prayer-times').addEventListener('click', async () => {
+                const button = document.getElementById('update-prayer-times');
+                const originalText = button.textContent;
+                
+                // إظهار مؤشر التحميل
+                button.textContent = 'جاري التحديث... ';
+                button.disabled = true;
+                
+                try {
+                    const success = await updatePrayerTimes();
+                    if (success) {
+                        button.textContent = 'تم التحديث بنجاح! ';
+                        button.classList.remove('bg-secondary', 'text-secondary-foreground');
+                        button.classList.add('bg-green-600', 'text-white');
+                        
+                        // إعادة تع الزر بعد ثانيتين
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.classList.remove('bg-green-600', 'text-white');
+                            button.classList.add('bg-secondary', 'text-secondary-foreground');
+                            button.disabled = false;
+                        }, 2000);
+                    } else {
+                        button.textContent = 'فشل التحديث! ';
+                        button.classList.remove('bg-secondary', 'text-secondary-foreground');
+                        button.classList.add('bg-red-600', 'text-white');
+                        
+                        // إعادة تع الزر بعد ثانيتين
+                        setTimeout(() => {
+                            button.textContent = originalText;
+                            button.classList.remove('bg-red-600', 'text-white');
+                            button.classList.add('bg-secondary', 'text-secondary-foreground');
+                            button.disabled = false;
+                        }, 2000);
+                    }
+                } catch (error) {
+                    console.error('Error updating prayer times:', error);
+                    button.textContent = 'حدث خطأ! ';
+                    button.classList.remove('bg-secondary', 'text-secondary-foreground');
+                    button.classList.add('bg-red-600', 'text-white');
+                    
+                    // إعادة تع الزر بعد ثانيتين
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('bg-red-600', 'text-white');
+                        button.classList.add('bg-secondary', 'text-secondary-foreground');
+                        button.disabled = false;
+                    }, 2000);
+                }
+            });
+            document.getElementById('settings-overlay').addEventListener('click', closeSettings);
+            
+            // Audio unlock - تفعيل الصوت عند التفاعل الأول
+            const audioRef = document.getElementById('audioRef');
+            if (audioRef && !state.audioUnlocked) {
+                const unlockAudio = async () => {
+                    try {
+                        console.log('🔓 محاولة تفعيل الصوت...');
+                        audioRef.volume = 0;
+                        const playPromise = audioRef.play();
+                        if (playPromise) {
+                            await playPromise;
+                            audioRef.pause();
+                            audioRef.currentTime = 0;
+                            audioRef.volume = state.settings.volume;
+                            state.audioUnlocked = true;
+                            console.log('✅ تم تفعيل الصوت بنجاح');
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ فشل تفعيل الصوت:', e);
+                    }
+                };
+                ['click', 'touchstart', 'keydown'].forEach(event => {
+                    document.addEventListener(event, unlockAudio, { once: true });
+                });
+                console.log('🔓 في انتظار تفاعل المستخدم لتفعيل الصوت...');
+            } else if (audioRef && state.audioUnlocked) {
+                console.log('✅ الصوت مفعّل بالفعل');
+            }
+        }
+
+        // ==================== TEST FUNCTIONS ====================
+        function testAdhan(prayerName = 'maghrib') {
+            console.log(`🧪 🧪 🧪 اختبار الأذان لصلاة ${prayerNames[prayerName]} 🧪 🧪 🧪`);
+            console.log('📊 الحالة الحالية:', {
+                currentPhase: state.currentPhase,
+                activePrayer: state.activePrayer,
+                isAdhanPlaying: state.isAdhanPlaying
+            });
+            
+            // إعادة تعيين الحالة
+            state.currentPhase = 'idle';
+            state.activePrayer = null;
+            state.isAdhanPlaying = false;
+            
+            // تفعيل الصوت إذا لم يكن مفعلاً
+            if (!state.audioUnlocked) {
+                console.log('🔓 تفعيل الصوت...');
+                const audioRef = document.getElementById('audioRef');
+                if (audioRef) {
+                    try {
+                        audioRef.volume = 0;
+                        audioRef.play().then(() => {
+                            audioRef.pause();
+                            audioRef.currentTime = 0;
+                            audioRef.volume = state.settings.volume;
+                            state.audioUnlocked = true;
+                            console.log('✅ تم تفعيل الصوت');
+                            // بعد تفعيل الصوت، ابدأ الأذان
+                            setTimeout(() => {
+                                state.activePrayer = prayerName;
+                                state.currentPhase = 'adhan';
+                                startAdhan();
+                            }, 100);
+                        }).catch((e) => {
+                            console.warn('⚠️ فشل تفعيل الصوت:', e);
+                            // حتى لو فشل، ابدأ الأذان
+                            state.activePrayer = prayerName;
+                            state.currentPhase = 'adhan';
+                            startAdhan();
+                        });
+                    } catch (e) {
+                        console.warn('⚠️ خطأ في تفعيل الصوت:', e);
+                        state.activePrayer = prayerName;
+                        state.currentPhase = 'adhan';
+                        startAdhan();
+                    }
+                } else {
+                    console.error('❌ audioRef غير موجود!');
+                    state.activePrayer = prayerName;
+                    state.currentPhase = 'adhan';
+                    startAdhan();
+                }
+            } else {
+                // الصوت مفعّل بالفعل
+                state.activePrayer = prayerName;
+                state.currentPhase = 'adhan';
+                startAdhan();
+            }
+        }
+        
+        function showCurrentPrayerTimes() {
+            console.log('📋 أوقات الصلاة الحالية:', state.settings.prayerTimes);
+            console.log('⏰ الوقت الحالي:', new Date().toLocaleTimeString('ar-SA'));
+            const now = new Date();
+            const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            console.log('⏰ الوقت الحالي (HH:MM):', currentTime);
+        }
+
+        // ==================== START APP ====================
+        window.openSettings = openSettings;
+        window.skipToNextPhase = skipToNextPhase;
+        window.toggleAccordion = toggleAccordion;
+        window.updateCities = updateCities;
+        window.handleFileChange = handleFileChange;
+        window.clearPhoneImage = clearPhoneImage;
+        window.toggleMute = toggleMute;
+        window.updateVolume = updateVolume;
+        window.fetchPrayerTimes = fetchPrayerTimes;
+        window.testAdhan = testAdhan;
+        window.showCurrentPrayerTimes = showCurrentPrayerTimes;
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
