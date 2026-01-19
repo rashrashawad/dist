@@ -1,13 +1,18 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Al-Moazin Digital Clock - ساعة المؤذن</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a1b1e">
+    <link rel="apple-touch-icon" href="backgrounds/150.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.0/dist/Adhan.min.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -188,6 +193,11 @@
         </div>
     </div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="remoteControl.js"></script>
+
     <script>
         // ==================== CONSTANTS ====================
         const prayerNames = {
@@ -211,6 +221,8 @@
         ];
 
         const azkarAfterPrayer = [
+           
+        
             "أَسْـتَغْفِرُ الله، أَسْـتَغْفِرُ الله، أَسْـتَغْفِرُ الله.\n\nاللّهُـمَّ أَنْـتَ السَّلامُ ، وَمِـنْكَ السَّلام ، تَبارَكْتَ يا ذا الجَـلالِ وَالإِكْـرام .",
             "لا إلهَ إلاّ اللّهُ وحدَهُ لا شريكَ لهُ، لهُ المُـلْكُ ولهُ الحَمْد، وهوَ على كلّ شَيءٍ قَدير،\n\nاللّهُـمَّ لا مانِعَ لِما أَعْطَـيْت، وَلا مُعْطِـيَ لِما مَنَـعْت، وَلا يَنْفَـعُ ذا الجَـدِّ مِنْـكَ الجَـد.",
             "لا إلهَ إلاّ اللّه، وحدَهُ لا شريكَ لهُ، لهُ الملكُ ولهُ الحَمد، وهوَ على كلّ شيءٍ قدير،\n\nلا حَـوْلَ وَلا قـوَّةَ إِلاّ بِاللهِ، لا إلهَ إلاّ اللّـه، وَلا نَعْـبُـدُ إِلاّ إيّـاه، لَهُ النِّعْـمَةُ وَلَهُ الفَضْل وَلَهُ الثَّـناءُ الحَـسَن، لا إلهَ إلاّ اللّهُ مخْلِصـينَ ل_ـهُ الدِّينَ وَلَوْ كَـرِهَ الكـافِرون.",
@@ -218,10 +230,10 @@
             "اللّهُـمَّ إِنِّـي أَسْأَلُـكَ عِلْمـاً نافِعـاً وَرِزْقـاً طَيِّـباً ، وَعَمَـلاً مُتَقَـبَّلاً.",
             "اللَّهُمَّ أَجِرْنِي مِنْ النَّار.\n\n(بعد صلاة الصبح والمغرب)",
             "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ.\n\n(ثلاث مرات بعد صلاتي الفجر والمغرب)",
-            "أَعُوذُ بِاللهِ مِنْ الشَّيْطَانِ الرَّجِيمِ\n\nاللّهُ لاَ إِلَـهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلاَّ بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلاَ يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلاَّ بِمَا شَاء وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالأَرْضِ وَلاَ يَؤُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ.\n\n[آية الكرسى - البقرة 255]",
-            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ هُوَ ٱللَّهُ أَحَدٌ، ٱللَّهُ ٱلصَّمَدُ، لَمْ يَلِدْ وَلَمْ يُولَدْ، وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ.\n\n[سورة الإخلاص]",
-            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ، مِن شَرِّ مَا خَلَقَ، وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ، وَمِن شَرِّ ٱلنَّفَّٰثَٰتِ فِى ٱلْعُقَدِ، وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ.\n\n[سورة الفلق]",
-            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ أَعُوذُ بِرَبِّ ٱلنَّاسِ، مَلِكِ ٱلنَّاسِ، إِلَٰهِ ٱلنَّاسِ، مِن شَرِّ ٱلْوَسْوَاسِ ٱلْخَنَّاسِ، ٱلَّذِى يُوَسْوِسُ فِى صُدُورِ ٱلنَّاسِ، مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ.\n\n[سورة الناس]\n\n(ثلاث مرات بعد صلاتي الفجر والمغرب)"
+            "أَعُوذُ بِاللهِ مِنْ الشَّيْطَانِ الرَّجِيمِ\n\nاللّهُ لاَ إِلَـهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ لاَ تَأْخُذُهُ سِنَةٌ وَلاَ نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلاَّ بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلاَ يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلاَّ بِمَا شَاء وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالأَرْضِ وَلاَ يَؤُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ ثلاثة مرات بعد صلاة الفجر والمغرب .\n\n[(ثلاثة مرات بعد صلاة الفجر والمغرب).آية الكرسى - البقرة .255]",
+            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ هُوَ ٱللَّهُ أَحَدٌ، ٱللَّهُ ٱلصَّمَدُ، لَمْ يَلِدْ وَلَمْ يُولَدْ، وَلَمْ يَكُن لَّهُۥ كُفُوًا أَحَدٌۢ .\n\n[ ثلاث مرات بعد صلاتي الفجر والمغرب).سورة الإخلاص]",
+            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ، مِن شَرِّ مَا خَلَقَ، وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ، وَمِن شَرِّ ٱلنَّفَّٰثَٰتِ فِى ٱلْعُقَدِ، وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ.\n\n[ثلاث مرات بعد صلاتي الفجر والمغرب).سورة الفلق]",
+            "بِسْمِ اللهِ الرَّحْمنِ الرَّحِيم\n\nقُلْ أَعُوذُ بِرَبِّ ٱلنَّاسِ، مَلِكِ ٱلنَّاسِ، إِلَٰهِ ٱلنَّاسِ، مِن شَرِّ ٱلْوَسْوَاسِ ٱلْخَنَّاسِ، ٱلَّذِى يُوَسْوِسُ فِى صُدُورِ ٱلنَّاسِ، مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ.\n\n[ (ثلاثة مرات بعد صلاة الفجر والمغرب ).سورة الناس.]\n\n(ثلاث مرات بعد صلاتي الفجر والمغرب)"
         ];
 
         const countries = [
@@ -260,65 +272,286 @@
             const c = normalize(countryAr);
             const city = normalize(cityAr);
 
-            if (c === 'الأردن') {
-                const cityMap = {
-                    'عمان': { apiCity: 'Amman', timeZone: 'Asia/Amman' },
-                    'الزرقاء': { apiCity: 'Zarqa', timeZone: 'Asia/Amman' },
-                    'إربد': { apiCity: 'Irbid', timeZone: 'Asia/Amman' },
-                    'العقبة': { apiCity: 'Aqaba', timeZone: 'Asia/Amman' },
-                    'السلط': { apiCity: 'As Salt', timeZone: 'Asia/Amman' },
-                    'مأدبا': { apiCity: 'Madaba', timeZone: 'Asia/Amman' },
-                };
-                const m = cityMap[city];
-                return {
+            const cityData = {
+                'الأردن': {
                     apiCountry: 'Jordan',
-                    apiCity: m?.apiCity ?? 'Amman',
                     method: 23,
-                    timeZone: m?.timeZone ?? 'Asia/Amman',
-                };
-            }
-
-            if (c === 'السعودية') {
-                const cityMap = {
-                    'الرياض': { apiCity: 'Riyadh', timeZone: 'Asia/Riyadh' },
-                    'جدة': { apiCity: 'Jeddah', timeZone: 'Asia/Riyadh' },
-                    'مكة المكرمة': { apiCity: 'Makkah', timeZone: 'Asia/Riyadh' },
-                    'المدينة المنورة': { apiCity: 'Madinah', timeZone: 'Asia/Riyadh' },
-                    'الدمام': { apiCity: 'Dammam', timeZone: 'Asia/Riyadh' },
-                    'الخبر': { apiCity: 'Khobar', timeZone: 'Asia/Riyadh' },
-                };
-                const m = cityMap[city];
-                return {
+                    timeZone: 'Asia/Amman',
+                    cities: {
+                        'عمان': { apiCity: 'Amman', coords: [31.9454, 35.9284] },
+                        'الزرقاء': { apiCity: 'Zarqa', coords: [32.0608, 36.1030] },
+                        'إربد': { apiCity: 'Irbid', coords: [32.5514, 35.8514] },
+                        'العقبة': { apiCity: 'Aqaba', coords: [29.5319, 35.0061] },
+                        'السلط': { apiCity: 'As Salt', coords: [32.0392, 35.7272] },
+                        'مأدبا': { apiCity: 'Madaba', coords: [31.7175, 35.7931] },
+                    }
+                },
+                'السعودية': {
                     apiCountry: 'Saudi Arabia',
-                    apiCity: m?.apiCity ?? 'Riyadh',
                     method: 4,
-                    timeZone: m?.timeZone ?? 'Asia/Riyadh',
-                };
-            }
-
-            if (c === 'مصر') {
-                const cityMap = {
-                    'القاهرة': { apiCity: 'Cairo', timeZone: 'Africa/Cairo' },
-                    'الإسكندرية': { apiCity: 'Alexandria', timeZone: 'Africa/Cairo' },
-                    'الجيزة': { apiCity: 'Giza', timeZone: 'Africa/Cairo' },
-                };
-                const m = cityMap[city];
-                return {
+                    timeZone: 'Asia/Riyadh',
+                    cities: {
+                        'الرياض': { apiCity: 'Riyadh', coords: [24.7136, 46.6753] },
+                        'جدة': { apiCity: 'Jeddah', coords: [21.5433, 39.1728] },
+                        'مكة المكرمة': { apiCity: 'Makkah', coords: [21.3891, 39.8579] },
+                        'المدينة المنورة': { apiCity: 'Madinah', coords: [24.4672, 39.6068] },
+                        'الدمام': { apiCity: 'Dammam', coords: [26.4207, 50.0888] },
+                        'الخبر': { apiCity: 'Khobar', coords: [26.2172, 50.1971] },
+                    }
+                },
+                'مصر': {
                     apiCountry: 'Egypt',
-                    apiCity: m?.apiCity ?? 'Cairo',
                     method: 5,
-                    timeZone: m?.timeZone ?? 'Africa/Cairo',
+                    timeZone: 'Africa/Cairo',
+                    cities: {
+                        'القاهرة': { apiCity: 'Cairo', coords: [30.0444, 31.2357] },
+                        'الإسكندرية': { apiCity: 'Alexandria', coords: [31.2001, 29.9187] },
+                        'الجيزة': { apiCity: 'Giza', coords: [30.0131, 31.2089] },
+                        'شبرا الخيمة': { apiCity: 'Shubra El-Kheima', coords: [30.1286, 31.2422] },
+                        'بور سعيد': { apiCity: 'Port Said', coords: [31.2653, 32.3019] },
+                        'السويس': { apiCity: 'Suez', coords: [29.9668, 32.5498] },
+                    }
+                },
+                'الإمارات العربية المتحدة': {
+                    apiCountry: 'United Arab Emirates',
+                    method: 16,
+                    timeZone: 'Asia/Dubai',
+                    cities: {
+                        'دبي': { apiCity: 'Dubai', coords: [25.2048, 55.2708] },
+                        'أبو ظبي': { apiCity: 'Abu Dhabi', coords: [24.4539, 54.3773] },
+                        'الشارقة': { apiCity: 'Sharjah', coords: [25.3463, 55.4209] },
+                        'العين': { apiCity: 'Al Ain', coords: [24.2075, 55.7447] },
+                        'عجمان': { apiCity: 'Ajman', coords: [25.4052, 55.5136] },
+                    }
+                },
+                'قطر': {
+                    apiCountry: 'Qatar',
+                    method: 10,
+                    timeZone: 'Asia/Qatar',
+                    cities: {
+                        'الدوحة': { apiCity: 'Doha', coords: [25.2854, 51.5310] },
+                        'الوكرة': { apiCity: 'Al Wakrah', coords: [25.1768, 51.6048] },
+                        'الريان': { apiCity: 'Al Rayyan', coords: [25.2950, 51.4250] },
+                    }
+                },
+                'فلسطين': {
+                    apiCountry: 'Palestine',
+                    method: 23,
+                    timeZone: 'Asia/Hebron',
+                    cities: {
+                        'القدس': { apiCity: 'Jerusalem', coords: [31.7683, 35.2137] },
+                        'غزة': { apiCity: 'Gaza', coords: [31.5, 34.4667] },
+                        'رام الله': { apiCity: 'Ramallah', coords: [31.9029, 35.2062] },
+                        'الخليل': { apiCity: 'Hebron', coords: [31.5297, 35.0938] },
+                        'نابلس': { apiCity: 'Nablus', coords: [32.2211, 35.2544] },
+                    }
+                },
+                'الكويت': {
+                    apiCountry: 'Kuwait',
+                    method: 9,
+                    timeZone: 'Asia/Kuwait',
+                    cities: {
+                        'مدينة الكويت': { apiCity: 'Kuwait City', coords: [29.3759, 47.9774] },
+                        'حولي': { apiCity: 'Hawalli', coords: [29.3361, 48.03] },
+                        'السالمية': { apiCity: 'Salmiya', coords: [29.3333, 48.0833] },
+                    }
+                }
+            };
+
+            const countryInfo = cityData[c];
+            if (countryInfo) {
+                const m = countryInfo.cities[city];
+                return {
+                    apiCountry: countryInfo.apiCountry,
+                    apiCity: m?.apiCity ?? city,
+                    method: countryInfo.method,
+                    timeZone: countryInfo.timeZone,
+                    coords: m?.coords ?? [0, 0]
                 };
             }
 
-            return { apiCountry: countryAr, apiCity: cityAr, timeZone: 'Asia/Amman' };
+            return { apiCountry: countryAr, apiCity: cityAr, timeZone: 'Asia/Amman', coords: [31.9454, 35.9284], method: 3 };
         }
 
+        function getAdhanCalculationMethod(methodId) {
+            if (typeof adhan === 'undefined') return null;
+            switch(methodId) {
+                case 1: return adhan.CalculationMethod.Karachi();
+                case 2: return adhan.CalculationMethod.NorthAmerica();
+                case 3: return adhan.CalculationMethod.MuslimWorldLeague();
+                case 4: return adhan.CalculationMethod.UmmAlQura();
+                case 5: return adhan.CalculationMethod.Egyptian();
+                case 8: return adhan.CalculationMethod.Gulf();
+                case 9: return adhan.CalculationMethod.Kuwait();
+                case 10: return adhan.CalculationMethod.Qatar();
+                case 12: return adhan.CalculationMethod.France();
+                case 13: return adhan.CalculationMethod.Turkey();
+                case 14: return adhan.CalculationMethod.Russia();
+                case 16: return adhan.CalculationMethod.Dubai();
+                case 23: // Jordan/Palestine
+                    const params = adhan.CalculationMethod.MuslimWorldLeague();
+                    params.fajrAngle = 18;
+                    params.ishaAngle = 18;
+                    return params;
+                default: return adhan.CalculationMethod.MuslimWorldLeague();
+            }
+        }
+
+        function calculateOfflinePrayerTimes(country, city, date = new Date()) {
+            try {
+                const mapping = resolveLocationMapping(country, city);
+                const coords = new adhan.Coordinates(mapping.coords[0], mapping.coords[1]);
+                const params = getAdhanCalculationMethod(mapping.method);
+                
+                const prayerTimes = new adhan.PrayerTimes(coords, date, params);
+                
+                const formatTime = (date) => {
+                    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                };
+
+                return {
+                    fajr: formatTime(prayerTimes.fajr),
+                    shuruq: formatTime(prayerTimes.sunrise),
+                    dhuhr: formatTime(prayerTimes.dhuhr),
+                    asr: formatTime(prayerTimes.asr),
+                    maghrib: formatTime(prayerTimes.maghrib),
+                    isha: formatTime(prayerTimes.isha),
+                    isOffline: true
+                };
+            } catch (e) {
+                console.error('Error calculating offline prayer times:', e);
+                return null;
+            }
+        }
+
+        // ==================== HELPER FUNCTIONS ====================
+        // دالة للتحقق من التاريخ وتحديد ما إذا كان التوقيت الصيفي أم الشتوي
+        function getAutomaticDSTAdjustment(country, date = new Date()) {
+            // التبديل التلقائي مفعل افتراضياً، يمكن تعطيله من الإعدادات
+            if (!defaultSettings.dstAutoAdjust) return 0;
+            
+            const month = date.getMonth() + 1; // شهر 1-12
+            const day = date.getDate();
+            
+            // تحديد فترات التوقيت الصيفي والشتوي حسب الدولة
+            if (country === 'الأردن' || country === 'فلسطين' || country ==='لبنان' || country ==='سوريا') {
+                // الأردن وفلسطين وسوريا ولبنان: التوقيت الصيفي من آخر أربعاء في مارس إلى آخر أربعاء في أكتوبر
+                if (month > 3 && month < 10) return 60; // +1 ساعة (توقيت صيفي)
+                if (month === 3) {
+                    // آخر أربعاء في مارس
+                    const lastWednesday = getLastWednesdayOfMonth(3, date.getFullYear());
+                    return (day > lastWednesday || (day === lastWednesday && date.getHours() >= 0)) ? 60 : 0;
+                }
+                if (month === 10) {
+                    // آخر أربعاء في أكتوبر
+                    const lastWednesday = getLastWednesdayOfMonth(10, date.getFullYear());
+                    return (day < lastWednesday || (day === lastWednesday && date.getHours() < 0)) ? 60 : 0;
+                }
+                return 0; // التوقيت العادي (شتوي)
+            }
+            else if (country === 'مصر') {
+                // مصر: التوقيت الصيفي من آخر أربعاء في أبريل إلى آخر أربعاء في سبتمبر
+                if (month > 4 && month < 9) return 60; // +1 ساعة (توقيت صيفي)
+                if (month === 4) {
+                    // آخر أربعاء في أبريل
+                    const lastWednesday = getLastWednesdayOfMonth(4, date.getFullYear());
+                    return (day > lastWednesday || (day === lastWednesday && date.getHours() >= 0)) ? 60 : 0;
+                }
+                if (month === 9) {
+                    // آخر أربعاء في سبتمبر
+                    const lastWednesday = getLastWednesdayOfMonth(9, date.getFullYear());
+                    return (day < lastWednesday || (day === lastWednesday && date.getHours() < 0)) ? 60 : 0;
+                }
+                return 0; // التوقيت العادي (شتوي)
+            }
+            else if (country === 'السعودية' || country === 'الكويت' || country ==='البحرين' || country ==='قطر' || country ==='الإمارات العربية المتحدة' || country ==='عمان') {
+                // دول الخليج: لا توجد فترة توقيت صيفي officially
+                return 0;
+            }
+            // باقي الدول: افتراضياً من مارس إلى أكتوبر
+            if (month > 2 && month < 11) return 60; // +1 ساعة (توقيت صيفي)
+            return 0; // التوقيت العادي (شتوي)
+        }
+        
+        // دالة مساعدة للحصول على آخر أربعاء في الشهر المحدد
+        function getLastWednesdayOfMonth(month, year) {
+            const date = new Date(year, month, 0); // آخر يوم في الشهر
+            const day = date.getDate();
+            const dayOfWeek = date.getDay(); // 0 (الأحد) إلى 6 (السبت)
+            
+            // الأربعاء هو اليوم 3
+            let lastWednesday = day - (dayOfWeek - 3 + 7) % 7;
+            if (lastWednesday < 1) {
+                // إذا كان يقع في الشهر السابق، احسبه من الأسبوع السابق
+                lastWednesday += 7;
+            }
+            return lastWednesday;
+        }
+        
+        // دالة لتحديث التوقيت تلقائياً بناءً على التاريخ
+        function updateDSTBasedOnDate() {
+            const now = new Date();
+            const country = state.settings.country || 'الأردن';
+            const autoAdjustment = getAutomaticDSTAdjustment(country, now);
+            
+            // تحقق إذا كان التعديل التلقائي مختلفاً عن الإعداد الحالي
+            if (autoAdjustment !== state.settings.dstAdjustment && state.settings.dstAdjustment !== 1) {
+                // إذا كان المستخدم قد قام بتعديل يدوي، لا نغيره
+                return;
+            }
+            
+            // تطبيق التعديل التلقائي
+            if (autoAdjustment !== state.settings.dstAdjustment) {
+                console.log(`🔄 تغيير التوقيت التلقائي: ${autoAdjustment === 60 ? 'توقيت صيفي (+1 ساعة)' : 'توقيت شتوي (عادي)'}`);
+                state.settings.dstAdjustment = autoAdjustment;
+                
+                // تحديث أوقات الصلاة مع التعديل الجديد
+                updatePrayerTimes();
+            }
+        }
+        
         // ==================== API FUNCTIONS ====================
-        async function fetchPrayerTimes(country, city) {
+        
+        function getCacheKey(country, city, year) {
+            return `prayerTimes_${country}_${city}_${year}`;
+        }
+
+        function getCachedPrayerTimes(country, city, date) {
+            try {
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1; // 1-12
+                const day = date.getDate();
+                
+                const key = getCacheKey(country, city, year);
+                const cachedData = localStorage.getItem(key);
+                
+                if (!cachedData) return null;
+                
+                const data = JSON.parse(cachedData);
+                // Aladhan API structure for calendar: data[month_index][day_index] or similar
+                // We will store exactly what the API returns: object with months "1", "2", etc.
+                
+                if (data && data[month] && data[month][day - 1]) {
+                    const timings = data[month][day - 1].timings;
+                    const normalize = (v) => (v ? String(v).split(' ')[0] : '');
+                    return {
+                        fajr: normalize(timings.Fajr),
+                        shuruq: normalize(timings.Sunrise),
+                        dhuhr: normalize(timings.Dhuhr),
+                        asr: normalize(timings.Asr),
+                        maghrib: normalize(timings.Maghrib),
+                        isha: normalize(timings.Isha),
+                    };
+                }
+            } catch (e) {
+                console.error('Error reading from cache:', e);
+            }
+            return null;
+        }
+
+        async function fetchAndCacheAnnualPrayerTimes(country, city, year) {
             const mapping = resolveLocationMapping(country, city);
-            const method = mapping.method ?? 23; // الأردن افتراضيًا
-            const tz = mapping.timeZone;
+            const method = mapping.method ?? 23; 
             const countryParam = mapping.apiCountry ?? country;
             const cityParam = mapping.apiCity ?? city;
 
@@ -326,36 +559,166 @@
                 city: cityParam,
                 country: countryParam,
                 method: String(method),
+                year: String(year),
+                annual: 'true'
             });
-            if (tz) params.append('timezonestring', tz);
 
-            const url = `https://api.aladhan.com/v1/timingsByCity?${params.toString()}`;
+            const url = `https://api.aladhan.com/v1/calendarByCity?${params.toString()}`;
+            console.log('Fetching annual prayer times...', url);
+
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Failed to fetch annual times: ${response.status}`);
+            
+            const json = await response.json();
+            if (json.code !== 200 || !json.data) throw new Error('Invalid annual data');
+
+            // Save to localStorage
+            const key = getCacheKey(country, city, year);
+            localStorage.setItem(key, JSON.stringify(json.data));
+            console.log('Annual prayer times cached successfully for year', year);
+        }
+
+        async function fetchPrayerTimes(country, city) {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            
+            // 1. Try to get from cache
+            const cached = getCachedPrayerTimes(country, city, today);
+            
+            // If cached data exists, we can return it.
+            // But we should also check if we need to cache the CURRENT year (if not fully cached or if we want to ensure we have it)
+            // For simplicity: If we have data for today, we assume the cache is good enough for now. 
+            // We can trigger a background update if we want, but let's prioritize returning data.
+            
+            if (cached) {
+                console.log('Using cached prayer times');
+                
+                // Optional: Check if we have next year's data if it's December?
+                // Or just ensure we have the full current year if we only have partial?
+                // The cache key is by year, so if it exists, it likely has the full year.
+                
+                return cached;
+            }
+
+            console.log('No cache found or cache miss, fetching from API...');
 
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch prayer times. Status: ${response.status}`);
-                }
-                const data = await response.json();
-
-                if (data.code !== 200 || !data.data?.timings) {
-                    throw new Error('Invalid data structure received from prayer times API.');
-                }
-
-                const normalize = (v) => (v ? String(v).split(' ')[0] : '');
-                const t = data.data.timings;
-
-                return {
-                    fajr: normalize(t.Fajr),
-                    shuruq: normalize(t.Sunrise),
-                    dhuhr: normalize(t.Dhuhr),
-                    asr: normalize(t.Asr),
-                    maghrib: normalize(t.Maghrib),
-                    isha: normalize(t.Isha),
-                };
+                // 2. If no cache, fetch the WHOLE year and cache it
+                // This ensures that one successful connection fixes the app for the whole year
+                await fetchAndCacheAnnualPrayerTimes(country, city, currentYear);
+                
+                // 3. Try to read from cache again
+                const newCached = getCachedPrayerTimes(country, city, today);
+                if (newCached) return newCached;
+                
+                throw new Error('Failed to retrieve prayer times after annual fetch');
             } catch (error) {
-                console.error('Error fetching prayer times data:', error);
-                throw error;
+                console.error('Annual fetch failed, trying single day fallback:', error);
+                
+                // 4. Fallback to single day fetch (original logic) if annual fetch fails
+                // (e.g. maybe API timed out on large request, but small request works?)
+                // Although usually if one fails, both fail if it's network.
+                // But let's keep the fallback just in case.
+                
+                try {
+                    const mapping = resolveLocationMapping(country, city);
+                    const method = mapping.method ?? 23;
+                    const tz = mapping.timeZone;
+                    const countryParam = mapping.apiCountry ?? country;
+                    const cityParam = mapping.apiCity ?? city;
+        
+                    const params = new URLSearchParams({
+                        city: cityParam,
+                        country: countryParam,
+                        method: String(method),
+                    });
+                    if (tz) params.append('timezonestring', tz);
+        
+                    const dd = String(today.getDate()).padStart(2, '0');
+                    const mm = String(today.getMonth() + 1).padStart(2, '0');
+                    const yyyy = today.getFullYear();
+                    const dateStr = `${dd}-${mm}-${yyyy}`;
+                    const url = `https://api.aladhan.com/v1/timingsByCity/${dateStr}?${params.toString()}`;
+                    // إضافة timeout لطلب الشبكة
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثانية timeout
+                    
+                    try {
+                        const response = await fetch(url, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                    } catch (fetchError) {
+                        clearTimeout(timeoutId);
+                        if (fetchError.name === 'AbortError') {
+                            throw new Error('انتهت مهلة الاتصال بالإنترنت');
+                        }
+                        throw fetchError;
+                    }
+                    
+                    const data = await response.json();
+                    const normalize = (v) => (v ? String(v).split(' ')[0] : '');
+                    
+                    // التحقق من وجود البيانات المطلوبة
+                    if (!data || !data.data || !data.data.timings) {
+                        throw new Error('بيانات توقيت الصلاة غير صالحة');
+                    }
+                    
+                    const t = data.data.timings;
+                    
+                    // طباعة بيانات التوقيت للتصحيح
+                    console.log('بيانات التوقيت المستلمة:', t);
+                    
+                    // التحقق من وجود كل الصلاة المطلوبة
+                    const prayers = {
+                        fajr: t.Fajr,
+                        shuruq: t.Sunrise || t.Shuruq || t.Fajr, // إذا لم تكن هناك قيمة للشروق، استخدم الفجر كقيمة بديلة
+                        dhuhr: t.Dhuhr,
+                        asr: t.Asr,
+                        maghrib: t.Maghrib,
+                        isha: t.Isha,
+                    };
+                    
+                    // طباعة بيانات الصلوات للتصحيح
+                    console.log('بيانات الصلوات المعالجة:', prayers);
+                    
+                    // التحقق من وجود قيم لجميع الصلوات
+                    for (const prayer in prayers) {
+                        if (!prayers[prayer]) {
+                            console.warn(`Missing prayer time for: ${prayer}`);
+                        }
+                    }
+                    
+                    return {
+                        fajr: normalize(prayers.fajr),
+                        shuruq: normalize(prayers.shuruq),
+                        dhuhr: normalize(prayers.dhuhr),
+                        asr: normalize(prayers.asr),
+                        maghrib: normalize(prayers.maghrib),
+                        isha: normalize(prayers.isha),
+                    };
+                } catch (fallbackError) {
+                    console.error('All fetch attempts failed, using offline calculation:', fallbackError);
+                    
+                    const offlineTimes = calculateOfflinePrayerTimes(country, city, today);
+                    if (offlineTimes) {
+                        console.log('Offline prayer times calculated successfully');
+                        return offlineTimes;
+                    }
+
+                    // في حالة فشل كل شيء، نعيد الإعدادات الافتراضية مؤقتاً
+                    console.log('استخدام الإعدادات الافتراضية كحل أخير');
+                    return {
+                        fajr: '04:02',
+                        shuruq: '05:33',
+                        dhuhr: '12:42',
+                        asr: '16:23',
+                        maghrib: '19:51',
+                        isha: '21:22',
+                    };
+                }
             }
         }
 
@@ -363,6 +726,12 @@
         const defaultSettings = {
             mosqueName: 'مسجد',
             timeFormat: '12h',
+            // المزامنة عن بعد
+            remoteSyncEnabled: false,
+            remoteSyncUrl: '', // رابط السيرفر الخاص بك
+            deviceLocationId: '', // معرف فريد للمدينة أو المسجد (مثلاً: Riyadh_01)
+            // التبديل التلقائي للتوقيت الصيفي والشتوي (1 للصيف، -1 للشتوي، 0 للتعديل اليدوي)
+            dstAutoAdjust: 1, // التبديل التلقائي مفعل افتراضياً
             prayerTimes: {
                 fajr: '04:02',
                 dhuhr: '12:42',
@@ -370,10 +739,11 @@
                 maghrib: '19:51',
                 isha: '21:22',
             },
+            manualPrayers: {}, // تتبع أوقات الصلاة التي تم تعديلها يدوياً
             prayerTimeOffsets: {
                 fajr: 0,
                 dhuhr: 0,
-                asr: 3,
+                asr: 1,
                 maghrib: 1,
                 isha: 0,
             },
@@ -397,6 +767,9 @@
             jumuahOffset: 0,
             country: 'الأردن',
             city: 'عمان',
+            neighborhood: '',
+            street: '',
+            dstAdjustment: 0,
             showWeather: true,
             temperature: 25,
             adhanSound: '',
@@ -422,36 +795,162 @@
             },
         };
 
+        // ==================== REMOTE SYNC FUNCTIONS ====================
+        async function checkRemoteUpdates() {
+            const settings = getSettings();
+            if (!settings.remoteSyncEnabled || !settings.remoteSyncUrl) return;
+
+            try {
+                console.log('📡 جاري التحقق من التحديثات عن بعد...');
+                // نرسل معرف الجهاز والمدينة للسيرفر ليعرف أي إعدادات يرسل
+                const url = new URL(settings.remoteSyncUrl);
+                url.searchParams.append('locationId', settings.deviceLocationId || settings.city);
+                url.searchParams.append('city', settings.city);
+                url.searchParams.append('t', Date.now()); // لمنع الكاش
+
+                const response = await fetch(url.toString());
+                if (!response.ok) throw new Error('Failed to connect to remote sync server');
+
+                const remoteConfig = await response.json();
+                
+                // إذا كانت هناك إعدادات جديدة، نقوم بتحديثها
+                if (remoteConfig && Object.keys(remoteConfig).length > 0) {
+                    console.log('✅ تم العثور على تحديثات عن بعد، جاري التطبيق...');
+                    
+                    // دمج الإعدادات القادمة من السيرفر مع الإعدادات المحلية
+                    state.settings = {
+                        ...state.settings,
+                        ...remoteConfig
+                    };
+                    
+                    saveSettings();
+                    renderMainScreen();
+                    
+                    // إذا تغيرت المدينة، نحدث مواقيت الصلاة فوراً
+                    if (remoteConfig.city || remoteConfig.country) {
+                        await updatePrayerTimes();
+                    }
+                }
+            } catch (error) {
+                console.error('❌ خطأ في المزامنة عن بعد:', error);
+            }
+        }
+
+        // تشغيل المزامنة كل 10 دقائق
+        setInterval(checkRemoteUpdates, 10 * 60 * 1000);
+
         // ==================== UPDATE FUNCTIONS ====================
         async function updatePrayerTimes() {
+            // إضافة فحص التحديثات عن بعد قبل تحديث المواقيت
+            await checkRemoteUpdates();
+            
+            console.log('🔄 محاولة تحديث مواقيت الصلاة...');
             try {
                 const settings = getSettings();
+                
+                // التحقق من وجود الإعدادات الأساسية
+                if (!settings || !settings.country || !settings.city) {
+                    console.error('❌ الإعدادات غير مكتملة');
+                    throw new Error('الإعدادات غير مكتملة');
+                }
+                
+                console.log(`📍 جاري جلب مواقيت الصلاة لـ: ${settings.city}, ${settings.country}`);
                 const newTimes = await fetchPrayerTimes(settings.country, settings.city);
+                
+                // التحقق من وجود بيانات المواقيت
+                if (!newTimes) {
+                    console.error('❌ لم يتم استرداد مواقيت الصلاة');
+                    throw new Error('لم يتم استرداد مواقيت الصلاة');
+                }
+                
+                console.log('✅ تم استرداد مواقيت الصلاة بنجاح:', newTimes);
+                
+                // Apply DST adjustment and manual offsets
+                const dst = settings.dstAdjustment || 0;
+                const offsets = settings.prayerTimeOffsets || { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
+                
+                if (dst !== 0 || Object.values(offsets).some(v => v !== 0)) {
+                    console.log(`Applying adjustments - DST: ${dst}, Offsets:`, offsets);
+                    const adjustedTimes = JSON.parse(JSON.stringify(newTimes)); // نسخة عميقة من المواقيت
+                    for (const prayer in adjustedTimes) {
+                        if (adjustedTimes[prayer]) {
+                            const offset = (offsets[prayer] || 0) + dst;
+                            adjustedTimes[prayer] = applyOffsetToTime(adjustedTimes[prayer], offset);
+                        }
+                    }
+                    // استخدام المواقيت المعدلة
+                    newTimes = adjustedTimes;
+                }
                 
                 // تحديث مواقيت الصلاة مع الحفاظ على الإعدادات الأخرى
                 settings.prayerTimes = newTimes;
                 
                 // تحديث وقت الشروق إذا كان موجوداً
-                if (newTimes.shuruq) {
+                if (newTimes && newTimes.shuruq) {
                     settings.shuruqTime = newTimes.shuruq;
+                    console.log('✅ تم تحديث وقت الشروق إلى:', newTimes.shuruq);
+                } else {
+                    console.warn('⚠️ معلومات وقت الشروق غير متاحة، سيتم استخدام القيمة الافتراضية');
+                    // إذا لم يكن هناك وقت شروق، استخدم القيمة الافتراضية
+                    if (!settings.shuruqTime) {
+                        settings.shuruqTime = '05:33';
+                        console.log('🔄 تم تعيين وقت الشروق الافتراضي:', settings.shuruqTime);
+                    }
                 }
                 
                 // حفظ الإعدادات الجديدة
                 state.settings = settings;
                 saveSettings();
                 
-                console.log('تم تحديث مواقيت الصلاة بنجاح');
+                console.log('🎉 تم تحديث مواقيت الصلاة بنجاح');
+                // تسجيل وقت آخر تحديث ناجح
+                state.lastSuccessfulUpdate = new Date();
+                state.lastUpdateAttempt = new Date();
+                
                 // تحديث واجهة المستخدم
                 renderMainScreen();
                 return true;
             } catch (error) {
-                console.error('فشل في تحديث مواقيت الصلاة:', error);
+                console.error('❌ فشل في تحديث مواقيت الصلاة:', error.message);
+                
+                // تسجيل وقت آخر محاولة للتحديث
+                state.lastUpdateAttempt = new Date();
+                
+                // في حالة فشل الاتصال، نستخدم الإعدادات الحالية
+                if (error.message.includes('انتهت مهلة الاتصال بالإنترنت') || 
+                    error.message.includes('Failed to fetch') ||
+                    error.message.includes('ERR_CONNECTION_TIMED_OUT')) {
+                    console.warn('⚠️ استخدام الإعدادات الحالية بسبب مشكلة في الاتصال بالإنترنت');
+                    
+                    // إذا لم يكن هناك تحديث ناجح من قبل، استخدم الإعدادات الافتراضية
+                    if (!state.lastSuccessfulUpdate) {
+                        console.log('🔄 استخدام الإعدادات الافتراضية كحل مؤقت');
+                        state.settings.prayerTimes = {
+                            fajr: '04:02',
+                            shuruq: '05:33',
+                            dhuhr: '12:42',
+                            asr: '16:23',
+                            maghrib: '19:51',
+                            isha: '21:22',
+                        };
+                        renderMainScreen();
+                    }
+                    
+                    return false;
+                }
+                
                 return false;
             }
         }
         
         // تحديث مواقيت الصلاة عند بدء التشغيل
         window.addEventListener('load', async () => {
+            // تحقق من التاريخ عند بدء التشغيل
+            updateDSTBasedOnDate();
+            
+            // تحقق من التاريخ كل ساعة لمراقبة تغيير التوقيت
+            setInterval(updateDSTBasedOnDate, 60 * 60 * 1000);
+            
             await updatePrayerTimes();
             
             // تحديث يومياً في منتصف الليل
@@ -522,12 +1021,30 @@
             }).format(date);
         }
 
+        // ==================== REMOTE CONTROL ====================
+        let remoteControl = null;
+        if (typeof RemoteControlManager !== 'undefined') {
+            remoteControl = new RemoteControlManager();
+            const firebaseConfig = {
+                apiKey: "AIzaSyDK_kEdxeew7b60MU6oD8CO4LJ0y_y7q-0",
+                authDomain: "muezzins-call-481df.firebaseapp.com",
+                databaseURL: "https://muezzins-call-481df.firebaseio.com",
+                projectId: "muezzins-call-481df",
+                storageBucket: "muezzins-call-481df.firebasestorage.app",
+                messagingSenderId: "633935423896",
+                appId: "1:633935423896:web:51e8f649fe32c3340823ed"
+            };
+            remoteControl.init(firebaseConfig);
+        }
+
         // ==================== STATE MANAGEMENT ====================
         let state = {
             settings: JSON.parse(JSON.stringify(defaultSettings)),
             isPanelOpen: false,
             isFetchingTimes: false,
             isOffline: false,
+            lastSuccessfulUpdate: null,
+            lastUpdateAttempt: null,
             currentPhase: 'idle', // 'idle' | 'adhan' | 'iqamaCountdown' | 'phoneImage' | 'azkar'
             activePrayer: null,
             iqamaEndTime: null,
@@ -555,6 +1072,29 @@
             }
             return defaultSettings;
         }
+        
+        // ==================== NETWORK MONITORING ====================
+        // مراقبة حالة الاتصال بالإنترنت
+        function checkNetworkStatus() {
+            const wasOffline = state.isOffline;
+            state.isOffline = !navigator.onLine;
+            
+            // إذا كان هناك اتصال جديد، حاول تحديث المواقيت
+            if (!state.isOffline && wasOffline) {
+                console.log('🌐 تم استعادة الاتصال بالإنترنت، محاولة تحديث المواقيت...');
+                setTimeout(updatePrayerTimes, 2000); // الانتقال قليلاً لضمان استقرار الاتصال
+            }
+            
+            // تحديث واجهة المستخدم لعرض حالة الاتصال
+            renderMainScreen();
+        }
+        
+        // إضافة مستمعي الأحداث لمراقبة حالة الاتصال
+        window.addEventListener('online', checkNetworkStatus);
+        window.addEventListener('offline', checkNetworkStatus);
+        
+        // التحقق من حالة الاتصال عند بدء التطبيق
+        checkNetworkStatus();
         
         // ==================== INITIALIZATION ====================
         function init() {
@@ -646,6 +1186,7 @@
                         prayerTimes: {
                             ...defaultSettings.prayerTimes,
                             ...(parsedSettings.prayerTimes || {}),
+                            ...(parsedPrayerTimesData.prayerTimes || {}),
                         },
                         // التأكد من دمج أوقات الإقامة بشكل صحيح
                         iqamaCountdown: {
@@ -656,7 +1197,12 @@
                         prayerTimeOffsets: {
                             ...defaultSettings.prayerTimeOffsets,
                             ...(parsedSettings.prayerTimeOffsets || {}),
+                            ...(parsedPrayerTimesData.prayerTimeOffsets || {}),
                         },
+                        shuruqTime: parsedPrayerTimesData.shuruqTime || parsedSettings.shuruqTime || defaultSettings.shuruqTime,
+                        shuruqOffset: parsedPrayerTimesData.shuruqOffset !== undefined ? parsedPrayerTimesData.shuruqOffset : (parsedSettings.shuruqOffset !== undefined ? parsedSettings.shuruqOffset : defaultSettings.shuruqOffset),
+                        jumuahTime: parsedPrayerTimesData.jumuahTime || parsedSettings.jumuahTime || defaultSettings.jumuahTime,
+                        jumuahOffset: parsedPrayerTimesData.jumuahOffset !== undefined ? parsedPrayerTimesData.jumuahOffset : (parsedSettings.jumuahOffset !== undefined ? parsedSettings.jumuahOffset : defaultSettings.jumuahOffset),
                     };
                     
                     // إزالة lastSaved من state.settings لأنه ليس جزءاً من الإعدادات
@@ -734,7 +1280,12 @@
 
             // Start clock
             setInterval(() => {
-                state.currentTime = new Date();
+                const now = new Date();
+                // Apply DST adjustment to current time if set
+                if (state.settings.dstAdjustment && state.settings.dstAdjustment !== 0) {
+                    now.setMinutes(now.getMinutes() + state.settings.dstAdjustment);
+                }
+                state.currentTime = now;
                 updateUI();
             }, 1000);
 
@@ -1646,7 +2197,7 @@
             const hasBackgroundImage = state.settings.phoneImage && state.settings.phoneImage.length > 0;
             const container = document.getElementById('app-container');
             container.innerHTML = `
-                <div class="min-h-screen flex items-center justify-center relative" style="background-color: ${hasBackgroundImage ? 'transparent' : '#000000'}; background-image: ${hasBackgroundImage ? `url(${state.settings.phoneImage})` : 'none'}; background-size: cover; background-position: center; background-repeat: no-repeat;">
+                <div class="min-h-screen flex items-center justify-center relative" style="background-color: ${hasBackgroundImage ? 'transparent' : '#000000'}; background-image: ${hasBackgroundImage ? `url(${state.settings.phoneImage})` : 'none'}; background-size: contain; background-position: center; background-repeat: no-repeat;">
                     <button onclick="skipToNextPhase()" class="absolute top-6 right-6 z-50 bg-red-600/80 hover:bg-red-700 text-white text-5xl font-bold rounded-full w-16 h-16 flex items-center justify-center shadow-2xl transition-all hover:scale-110" title="اضغط للخروج">×</button>
                     ${!hasBackgroundImage ? 
                         `<div class="text-white text-6xl font-bold text-center p-8">
@@ -1737,6 +2288,21 @@
             const { nextPrayerName, countdown } = calculateNextPrayer();
             const nowTz = state.currentTime;
             
+            // التحقق من وجود تحديثات حديثة
+            let lastUpdateInfo = '';
+            if (state.lastSuccessfulUpdate) {
+                const timeSinceUpdate = Math.floor((new Date() - state.lastSuccessfulUpdate) / (1000 * 60)); // دقائق
+                
+                if (timeSinceUpdate > 60) { // إذا كان آخر تحديث منذ أكثر من ساعة
+                    const hours = Math.floor(timeSinceUpdate / 60);
+                    lastUpdateInfo = `<div class="text-xs text-amber-300 bg-amber-900/30 px-2 py-1 rounded-md border border-amber-700/50">آخر تحديث منذ ${hours} ساعة</div>`;
+                } else {
+                    lastUpdateInfo = `<div class="text-xs text-green-300 bg-green-900/30 px-2 py-1 rounded-md border border-green-700/50">آخر تحديث منذ ${timeSinceUpdate} دقيقة</div>`;
+                }
+            } else if (state.isOffline) {
+                lastUpdateInfo = `<div class="text-xs text-red-300 bg-red-900/30 px-2 py-1 rounded-md border border-red-700/50">لا يوجد بيانات اتصال</div>`;
+            }
+            
             const hour = String(nowTz.getHours()).padStart(2, '0');
             const minute = String(nowTz.getMinutes()).padStart(2, '0');
             const second = String(nowTz.getSeconds()).padStart(2, '0');
@@ -1769,12 +2335,28 @@
                                     <svg class="text-yellow-400" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
                                 </div>
                             ` : ''}
-                            ${state.isOffline ? `<svg class="text-red-400" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="غير متصل"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><line x1="1.42" y1="1.42" x2="23" y2="23"></line><path d="M23 12.55a11.93 11.93 0 0 1-2.33 3.5"></path><path d="M2 2l20 20"></path></svg>` : ''}
+                            ${state.isOffline ? `
+                                <div class="flex items-center gap-2 bg-red-900/30 px-2 py-1 rounded-md border border-red-700/50">
+                                    <svg class="text-red-400" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="غير متصل"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><line x1="1.42" y1="1.42" x2="23" y2="23"></line><path d="M23 12.55a11.93 11.93 0 0 1-2.33 3.5"></path><path d="M2 2l20 20"></path></svg>
+                                    <span class="text-red-300 text-sm">غير متصل</span>
+                                </div>
+                            ` : `
+                                <div class="flex items-center gap-2 bg-green-900/30 px-2 py-1 rounded-md border border-green-700/50">
+                                    <svg class="text-green-400" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="متصل"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    <span class="text-green-300 text-sm">متصل</span>
+                                </div>
+                            `}
+                            ${lastUpdateInfo}
                         </div>
                         <h1 class="text-4xl md:text-5xl font-bold text-center flex-grow">${state.settings.mosqueName}</h1>
-                        <button onclick="openSettings()" class="bg-transparent hover:bg-accent p-2 rounded-md" aria-label="Open settings">
-                            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button onclick="updatePrayerTimes()" class="bg-transparent hover:bg-accent p-2 rounded-md" aria-label="تحديث المواقيت" title="تحديث مواقيت الصلاة">
+                                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                            </button>
+                            <button onclick="openSettings()" class="bg-transparent hover:bg-accent p-2 rounded-md" aria-label="Open settings">
+                                <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path></svg>
+                            </button>
+                        </div>
                     </header>
 
                     <main class="flex-grow flex flex-col justify-center items-center text-center my-4">
@@ -1876,6 +2458,14 @@
             
             content.innerHTML = `
                 <div class="space-y-6">
+                    <!-- PWA Install Button -->
+                    <div id="install-button-container" class="hidden border-b pb-4">
+                        <button id="install-pwa-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                            تثبيت التطبيق على الجهاز
+                        </button>
+                    </div>
+
                     <!-- General Settings -->
                     <div class="border-b pb-4">
                         <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('general')">معلومات عامة ▼</h3>
@@ -1901,6 +2491,23 @@
                                             <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>
                                         </button>
                                     </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">الحي</label>
+                                    <input type="text" id="neighborhood" value="${localSettings.neighborhood || ''}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" placeholder="مثال: حي معصوم أو جبل النزهة" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">الشارع</label>
+                                    <input type="text" id="street" value="${localSettings.street || ''}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" placeholder="مثال: شارع الكويتية أو شارع بسمان" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">تعديل التوقيت (صيفي/شتوي)</label>
+                                    <select id="dst-adjustment" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground">
+                                        <option value="1" ${localSettings.dstAdjustment === 1 ? 'selected' : ''}>تلقائي (تغيير وفقاً للتاريخ)</option>
+                                        <option value="0" ${localSettings.dstAdjustment === 0 ? 'selected' : ''}>بدون تعديل</option>
+                                        <option value="60" ${localSettings.dstAdjustment === 60 ? 'selected' : ''}>توقيت صيفي (+1 ساعة)</option>
+                                        <option value="-60" ${localSettings.dstAdjustment === -60 ? 'selected' : ''}>توقيت شتوي (-1 ساعة)</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -1945,9 +2552,16 @@
                                 ${PRAYER_ORDER.map(prayer => `
                                     <div>
                                         <label class="block text-sm font-medium mb-2">${prayerNames[prayer]}</label>
-                                        <input type="time" id="prayer-${prayer}" value="${localSettings.prayerTimes[prayer]}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <input type="time" id="prayer-${prayer}" value="${localSettings.prayerTimes[prayer]}" class="flex-1 px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="savePrayerOffset('${prayer}')" />
+                                            <button onclick="adjustPrayerTime('${prayer}', -1)" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md">-</button>
+                                            <button onclick="adjustPrayerTime('${prayer}', 1)" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-md">+</button>
+                                        </div>
                                         <label class="block text-sm font-medium mb-2 mt-2">تعديل ${prayerNames[prayer]} (دقائق)</label>
-                                        <input type="number" id="prayer-offset-${prayer}" value="${(localSettings.prayerTimeOffsets && localSettings.prayerTimeOffsets[prayer]) || 0}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" id="prayer-offset-${prayer}" value="${(localSettings.prayerTimeOffsets && localSettings.prayerTimeOffsets[prayer]) || 0}" class="flex-1 px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="savePrayerOffset('${prayer}')" />
+                                            <button onclick="savePrayerOffset('${prayer}')" class="bg-primary text-primary-foreground px-3 py-2 rounded-md hover:bg-primary/90">حفظ</button>
+                                        </div>
                                     </div>
                                 `).join('')}
                             </div>
@@ -1982,6 +2596,8 @@
                             </div>
                         </div>
                     </div>
+
+
 
                     <!-- Colors -->
                     <div class="border-b pb-4">
@@ -2082,7 +2698,7 @@
                                     <input type="file" id="phone-image" accept="image/*" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="handleFileChange('phoneImage', this)" />
                                     ${localSettings.phoneImage ? `
                                         <div class="mt-3 p-3 bg-secondary rounded-md">
-                                            <img src="${localSettings.phoneImage}" alt="معاينة صورة إغلاق الهاتف" class="w-full max-h-48 object-contain rounded mb-2" />
+                                            <img src="${localSettings.phoneImage}" alt="معاينة صورة إغلاق الهاتف" class="w-full max-h-36 object-contain rounded mb-2" />
                                             <button type="button" onclick="clearPhoneImage()" class="w-full bg-destructive text-destructive-foreground px-3 py-2 rounded-md text-sm hover:opacity-90">مسح الصورة</button>
                                         </div>
                                     ` : ''}
@@ -2108,6 +2724,117 @@
                                 <div>
                                     <label class="block text-sm font-medium mb-2">مدة عرض الأذكار - الثواني</label>
                                     <input type="number" id="azkar-duration-seconds" value="${localSettings.azkarDurationSeconds}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Remote Control -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-lg font-semibold mb-4 cursor-pointer" onclick="toggleAccordion('remote-control')">التحكم عن بعد ▼</h3>
+                        <div id="accordion-remote-control" class="accordion-content">
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">اختر الشاشة</label>
+                                    <div class="flex gap-2 mb-2">
+                                        <button onclick="selectCurrentScreen()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">الشاشة الحالية</button>
+                                        <button onclick="showAllScreens()" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">جميع الشاشات</button>
+                                    </div>
+                                    <select id="screen-select" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="loadScreenSettings()">
+                                        <option value="current">الشاشة الحالية</option>
+                                        <option value="all">جميع الشاشات</option>
+                                        <option value="by-country">حسب الدولة</option>
+                                    </select>
+                                </div>
+                                <div id="screen-settings">
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">كود الأمان (للمشرف)</label>
+                                        <input type="password" id="remote-security-key" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" placeholder="أدخل كود الأمان" />
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">الدولة</label>
+                                            <select id="remote-country" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="updateRemoteCities()">
+                                                ${countries.map(c => `<option value="${c}" ${c === localSettings.country ? 'selected' : ''}>${c}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">المدينة</label>
+                                            <select id="remote-city" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground">
+                                                ${(citiesByCountry[localSettings.country] || []).map(c => `<option value="${c}" ${c === localSettings.city ? 'selected' : ''}>${c}</option>`).join('')}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">الحي</label>
+                                            <input type="text" id="remote-neighborhood" value="${localSettings.neighborhood || ''}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" placeholder="مثال: حي معصوم" />
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium mb-2">الشارع</label>
+                                            <input type="text" id="remote-street" value="${localSettings.street || ''}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" placeholder="مثال: شارع الكويتية" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">اسم المسجد</label>
+                                        <input type="text" id="remote-mosque-name" value="${localSettings.mosqueName || ''}" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">الخدمة المراد تعديلها</label>
+                                        <select id="remote-service-type" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground">
+                                            <option value="all">تحديث شامل (جميع الخدمات)</option>
+                                            <option value="mosque_info">معلومات المسجد والموقع</option>
+                                            <option value="prayer_times">مواقيت الصلاة والإقامة</option>
+                                            <option value="display_settings">إعدادات العرض والخلفيات</option>
+                                            <option value="audio_settings">إعدادات الصوت والآذان</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium mb-2">رسالة التحديث (تظهر على الشاشة)</label>
+                                        <input type="text" id="remote-message" value="تم التحديث بنجاح" class="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground" />
+                                    </div>
+                                    <div class="pt-2">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" id="remote-update-all" class="w-4 h-4 rounded border-gray-600 bg-gray-700">
+                                            <span class="text-sm text-gray-300">تطبيق على جميع الشاشات في هذا الحي</span>
+                                        </label>
+                                    </div>
+                                    <div>
+                                        <button onclick="applyRemoteSettings()" class="w-full bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 mt-2">تطبيق الإعدادات وحفظها</button>
+                                    </div>
+                                </div>
+                                <div id="screens-list" class="hidden">
+                                    <div class="mt-4 p-3 bg-gray-800 rounded-lg">
+                                        <!-- قسم اختيار المدينة -->
+                                        <div id="city-selection" class="mb-4">
+                                            <h4 class="text-md font-semibold mb-2">اختر المدينة</h4>
+                                            <div class="flex gap-2 mb-2">
+                                                <select id="city-country-select" class="flex-1 px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="updateCityList()">
+                                                    ${countries.map(c => `<option value="${c}">${c}</option>`).join('')}
+                                                </select>
+                                                <select id="city-select" class="flex-1 px-3 py-2 bg-input border border-border rounded-md text-foreground" onchange="loadMosquesInCity()">
+                                                    <option value="">اختر المدينة</option>
+                                                </select>
+                                            </div>
+                                            <button onclick="loadAllMosquesInCity()" class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">عرض جميع المساجد في المدينة</button>
+                                        </div>
+                                        
+                                        <!-- قسم قائمة المساجد في المدينة -->
+                                        <div id="city-mosques-list">
+                                            <h4 class="text-md font-semibold mb-2">مساجد المدينة المختارة</h4>
+                                            <div id="city-mosques-container" class="space-y-2 max-h-40 overflow-y-auto">
+                                                <!-- سيتم ملء هذه القائمة ديناميكيًا -->
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- قسم قائمة الشاشات المسجلة -->
+                                        <div>
+                                            <h4 class="text-md font-semibold mb-2">قائمة الشاشات المسجلة</h4>
+                                            <div id="screens-container" class="space-y-2 max-h-40 overflow-y-auto">
+                                                <!-- سيتم ملء هذه القائمة ديناميكيًا -->
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2168,6 +2895,436 @@
             renderSettingsPanel();
         }
 
+        // دالة لتحديث قائمة المدن في قسم التحكم عن بعد
+        function updateRemoteCities() {
+            const country = document.getElementById('remote-country').value;
+            const citySelect = document.getElementById('remote-city');
+            const cities = citiesByCountry[country] || [];
+            
+            // حفظ القيمة الحالية للمدينة قبل تحديث القائمة
+            const currentCity = citySelect.value;
+            
+            // تحديث قائمة المدن
+            citySelect.innerHTML = cities.map(c => `<option value="${c}">${c}</option>`).join('');
+            
+            // إذا كانت هناك مدن، جرب الحفاظ على المدينة الحالية إذا كانت موجودة في القائمة الجديدة
+            if (cities.length > 0) {
+                if (cities.includes(currentCity)) {
+                    citySelect.value = currentCity;
+                } else {
+                    citySelect.value = cities[0];
+                }
+            } else {
+                citySelect.value = '';
+            }
+        }
+
+        // دالة لتحميل إعدادات الشاشة المحددة
+        function loadScreenSettings() {
+            const screenSelect = document.getElementById('screen-select');
+            const screenSettings = document.getElementById('screen-settings');
+            const screensList = document.getElementById('screens-list');
+            
+            if (screenSelect.value === 'current') {
+                // عرض إعدادات الشاشة الحالية
+                screenSettings.classList.remove('hidden');
+                screensList.classList.add('hidden');
+                
+                // تحميل إعدادات الشاشة الحالية
+                const countryEl = document.getElementById('remote-country');
+                const cityEl = document.getElementById('remote-city');
+                
+                if (countryEl) {
+                    countryEl.value = state.settings.country;
+                    // تحديث قائمة المدن بناءً على الدولة المحددة
+                    updateRemoteCities();
+                }
+                if (cityEl) cityEl.value = state.settings.city;
+            } else if (screenSelect.value === 'all' || screenSelect.value === 'by-country') {
+                // عرض إعدادات الشاشات المحددة
+                screenSettings.classList.remove('hidden');
+                screensList.classList.add('hidden');
+                
+                // تحميل إعدادات الشاشات
+                const countryEl = document.getElementById('remote-country');
+                const cityEl = document.getElementById('remote-city');
+                
+                if (countryEl) {
+                    countryEl.value = state.settings.country;
+                    // تحديث قائمة المدن بناءً على الدولة المحددة
+                    updateRemoteCities();
+                }
+                if (cityEl) cityEl.value = state.settings.city;
+            }
+        }
+
+        // دالة لاختيار الشاشة الحالية
+        function selectCurrentScreen() {
+            const screenSelect = document.getElementById('screen-select');
+            screenSelect.value = 'current';
+            loadScreenSettings();
+        }
+
+        // دالة لعرض جميع الشاشات
+        function showAllScreens() {
+            const screenSelect = document.getElementById('screen-select');
+            screenSelect.value = 'all';
+            loadScreenSettings();
+        }
+
+        // دالة لتحميل قائمة الشاشات المسجلة
+        function loadScreensList() {
+            const screensContainer = document.getElementById('screens-container');
+            
+            // جلب قائمة الشاشات من التخزين المحلي
+            let screens = JSON.parse(localStorage.getItem('alMoazinScreensList') || '[]');
+            
+            // إذا لم توجد قائمة، قم بإنشاء قائمة تحتوي على الشاشة الحالية
+            if (screens.length === 0) {
+                const screenId = generateScreenId();
+                const screenName = state.settings.mosqueName || `شاشة ${new Date().toLocaleDateString()}`;
+                
+                screens = [{
+                    id: screenId,
+                    name: screenName,
+                    country: state.settings.country,
+                    city: state.settings.city,
+                    lastUpdated: new Date().toISOString()
+                }];
+                
+                // حفظ القائمة الجديدة
+                localStorage.setItem('alMoazinScreensList', JSON.stringify(screens));
+            }
+            
+            // عرض قائمة الشاشات
+            screensContainer.innerHTML = screens.map(screen => `
+                <div class="flex items-center justify-between p-2 bg-gray-700 rounded-md hover:bg-gray-600 cursor-pointer" onclick="selectScreen('${screen.id}')">
+                    <div>
+                        <div class="font-medium">${screen.name}</div>
+                        <div class="text-sm text-gray-400">${screen.country} - ${screen.city}</div>
+                    </div>
+                    <button onclick="event.stopPropagation(); deleteScreen('${screen.id}')" class="text-red-500 hover:text-red-400">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // دالة لإنشاء معرف فريد للشاشة
+        function generateScreenId() {
+            return 'screen_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // دالة لاختيار شاشة محددة
+        function selectScreen(screenId) {
+            const screens = JSON.parse(localStorage.getItem('alMoazinScreensList') || '[]');
+            const screen = screens.find(s => s.id === screenId);
+            
+            if (screen) {
+                // تحميل إعدادات الشاشة المحددة
+                document.getElementById('screen-select').value = 'current';
+                document.getElementById('screen-settings').classList.remove('hidden');
+                document.getElementById('screens-list').classList.add('hidden');
+                
+                // تعبئة الحقول بقيم الشاشة المحددة
+                document.getElementById('remote-country').value = screen.country;
+                document.getElementById('remote-mosque-name').value = screen.name;
+                
+                // تحديث قائمة المدن بناءً على الدولة المحددة
+                updateRemoteCities();
+                
+                // تحديد المدينة
+                const citySelect = document.getElementById('remote-city');
+                if (citySelect && screen.city) {
+                    citySelect.value = screen.city;
+                }
+            }
+        }
+
+        // دالة لحذف شاشة
+        function deleteScreen(screenId) {
+            if (confirm('هل أنت متأكد من حذف هذه الشاشة؟')) {
+                let screens = JSON.parse(localStorage.getItem('alMoazinScreensList') || '[]');
+                screens = screens.filter(s => s.id !== screenId);
+                localStorage.setItem('alMoazinScreensList', JSON.stringify(screens));
+                
+                // إعادة تحميل قائمة الشاشات
+                loadScreensList();
+            }
+        }
+
+        // دالة لتطبيق الإعدادات عن بعد
+        function applyRemoteSettings() {
+            try {
+                console.log('💾 بدء تطبيق الإعدادات عن بعد...');
+                
+                // الحصول على القيم من قسم التحكم عن بعد
+                const countryEl = document.getElementById('remote-country');
+                const cityEl = document.getElementById('remote-city');
+                const mosqueNameEl = document.getElementById('remote-mosque-name');
+                const messageEl = document.getElementById('remote-message');
+                const screenSelect = document.getElementById('screen-select');
+                
+                // التحقق من وجود العناصر الأساسية
+                if (!countryEl || !screenSelect) {
+                    throw new Error('العناصر الأساسية غير موجودة في الواجهة');
+                }
+                
+                // الحصول على قائمة الشاشات
+                let screens = [];
+                try {
+                    screens = JSON.parse(localStorage.getItem('alMoazinScreensList') || '[]');
+                } catch (e) {
+                    console.error('خطأ في تحليل قائمة الشاشات:', e);
+                    screens = [];
+                }
+                let targetScreens = [];
+                
+                if (screenSelect.value === 'current') {
+                    // تطبيق الإعدادات على الشاشة الحالية فقط
+                    targetScreens = [{
+                        id: 'current',
+                        name: state.settings.mosqueName || 'الشاشة الحالية',
+                        country: state.settings.country,
+                        city: state.settings.city
+                    }];
+                    
+                    // تحديث الإعدادات الحالية
+                    if (countryEl) state.settings.country = countryEl.value;
+                    if (cityEl) state.settings.city = cityEl.value;
+                    
+                    // تحديث أوقات الصلاة الحالية مع الحفاظ على التعديلات اليدوية
+                    if (messageEl) {
+                        showNotification(messageEl.value, 'success');
+                        console.log('تم تحديث إعدادات الشاشة الحالية');
+                    }
+                } else if (screenSelect.value === 'by-country') {
+                    // تطبيق الإعدادات على جميع الشاشات في نفس الدولة
+                    const selectedCountry = countryEl.value;
+                    const selectedCity = cityEl ? cityEl.value : '';
+                    
+                    // تحديث جميع الشاشات في نفس الدولة مع الحفاظ على تعديلات كل مسجد
+                    screens.forEach(screen => {
+                        if (screen.country === selectedCountry) {
+                            screen.country = selectedCountry;
+                            if (selectedCity) screen.city = selectedCity;
+                            screen.lastUpdated = new Date().toISOString();
+                            
+                            // لا نحذف تعديلات أوقات الصلاة لكل مسجد
+                            if (!screen.prayerTimeOffsets) {
+                                screen.prayerTimeOffsets = {};
+                            }
+                        }
+                    });
+                    
+                    // حفظ القائمة المحدثة
+                    localStorage.setItem('alMoazinScreensList', JSON.stringify(screens));
+                    
+                    // تطبيق الإعدادات على جميع الشاشات في الدولة المحددة
+                    targetScreens = screens.filter(screen => screen.country === selectedCountry);
+                    
+                    if (targetScreens.length === 0) {
+                        // إذا لم توجد شاشات مسجلة لهذه الدولة، قم بإنشاء شاشة افتراضية
+                        targetScreens = [{
+                            id: generateScreenId(),
+                            name: `جميع المساجد في ${selectedCountry}`,
+                            country: selectedCountry,
+                            city: selectedCity || (citiesByCountry[selectedCountry] ? citiesByCountry[selectedCountry][0] : ''),
+                            lastUpdated: new Date().toISOString(),
+                            prayerTimeOffsets: {}
+                        }];
+                        
+                        // إضافة الشاشة الجديدة إلى القائمة
+                        screens.push(targetScreens[0]);
+                        localStorage.setItem('alMoazinScreensList', JSON.stringify(screens));
+                    }
+                    
+                    // إظهار إشعار بالنجاح
+                    if (messageEl) {
+                        showNotification(messageEl.value, 'success');
+                        console.log(`تم تحديث جميع المساجد في ${selectedCountry}`);
+                    }
+                } else if (screenSelect.value === 'all') {
+                    // تطبيق الإعدادات على جميع الشاشات المسجلة
+                    targetScreens = screens;
+                    
+                    // إظهار إشعار بالنجاح
+                    if (messageEl) {
+                        showNotification(messageEl.value, 'success');
+                        console.log('تم تحديث جميع الشاشات');
+                    }
+                } else {
+                    // تطبيق الإعدادات على شاشة محددة
+                    const selectedScreenId = screenSelect.value;
+                    const selectedScreen = screens.find(s => s.id === selectedScreenId);
+                    
+                    if (selectedScreen) {
+                        targetScreens = [selectedScreen];
+                        
+                        // تحديث معلومات الشاشة المحددة
+                        selectedScreen.country = countryEl.value;
+                        if (cityEl) selectedScreen.city = cityEl.value;
+                        selectedScreen.lastUpdated = new Date().toISOString();
+                        
+                        // تأكد من الحفاظ على تعديلات أوقات الصلاة الخاصة بهذا المسجد
+                        if (!selectedScreen.prayerTimeOffsets) {
+                            selectedScreen.prayerTimeOffsets = {};
+                        }
+                        
+                        // حفظ القائمة المحدثة
+                        localStorage.setItem('alMoazinScreensList', JSON.stringify(screens));
+                        
+                        // إظهار إشعار بالنجاح
+                        if (messageEl) {
+                            showNotification(messageEl.value, 'success');
+                            console.log(`تم تحديث المسجد: ${selectedScreen.name}`);
+                        }
+                    }
+                }
+                
+                console.log(`🎯 سيتم تطبيق الإعدادات على ${targetScreens.length} شاشة(ات)`);
+                
+                // تطبيق الإعدادات على كل الشاشات المستهدفة
+                targetScreens.forEach((screen, index) => {
+                    console.log(`📱 تطبيق الإعدادات على الشاشة: ${screen.name}`);
+                    
+                    // فصل الملفات الكبيرة عن الإعدادات الأساسية
+                    const mediaFiles = {
+                        backgroundImage: state.settings.backgroundImage || '',
+                        iqamaBackgroundImage: state.settings.iqamaBackgroundImage || '',
+                        azkarBackgroundImage: state.settings.azkarBackgroundImage || '',
+                        phoneImage: state.settings.phoneImage || '',
+                        adhanImage: state.settings.adhanImage || '',
+                        adhanSound: state.settings.adhanSound || '',
+                        fajrAdhanSound: state.settings.fajrAdhanSound || ''
+                    };
+                    
+                    // فصل مواقيت الصلاة عن الإعدادات الأساسية
+                    const prayerTimesData = {
+                        prayerTimes: state.settings.prayerTimes,
+                        prayerTimeOffsets: state.settings.prayerTimeOffsets,
+                        shuruqTime: state.settings.shuruqTime,
+                        shuruqOffset: state.settings.shuruqOffset,
+                        jumuahTime: state.settings.jumuahTime,
+                        jumuahOffset: state.settings.jumuahOffset,
+                        lastUpdated: new Date().toISOString()
+                    };
+                    
+                    // إنشاء نسخة من الإعدادات بدون الملفات الكبيرة ومواقيت الصلاة
+                    const essentialSettings = {
+                        mosqueName: screen.id === 'current' ? state.settings.mosqueName : screen.name,
+                        timeFormat: state.settings.timeFormat,
+                        iqamaCountdown: state.settings.iqamaCountdown,
+                        dimDuration: state.settings.dimDuration,
+                        adhanDurationMinutes: state.settings.adhanDurationMinutes,
+                        adhanDurationSeconds: state.settings.adhanDurationSeconds,
+                        phoneImageDurationMinutes: state.settings.phoneImageDurationMinutes,
+                        phoneImageDurationSeconds: state.settings.phoneImageDurationSeconds,
+                        azkarDurationMinutes: state.settings.azkarDurationMinutes,
+                        azkarDurationSeconds: state.settings.azkarDurationSeconds,
+                        country: screen.id === 'current' ? state.settings.country : screen.country,
+                        city: screen.id === 'current' ? state.settings.city : screen.city,
+                        showWeather: state.settings.showWeather,
+                        temperature: state.settings.temperature,
+                        volume: state.settings.volume,
+                        isMuted: state.settings.isMuted,
+                        adhanTextPosition: state.settings.adhanTextPosition,
+                        iqamaBackgroundColor: state.settings.iqamaBackgroundColor,
+                        colors: state.settings.colors,
+                        lastSaved: new Date().toISOString()
+                    };
+                    
+                    try {
+                        // حفظ الإعدادات الأساسية
+                        localStorage.setItem('alMoazinClockSettings', JSON.stringify(essentialSettings));
+                        console.log(`✅ تم حفظ الإعدادات الأساسية في localStorage للشاشة: ${screen.name}`);
+                    } catch (e) {
+                        console.error(`❌ فشل حفظ الإعدادات الأساسية للشاشة ${screen.name}:`, e);
+                    }
+                    
+                    try {
+                        // حفظ مواقيت الصلاة بشكل منفصل
+                        localStorage.setItem('alMoazinPrayerTimesData', JSON.stringify(prayerTimesData));
+                        console.log(`✅ تم حفظ بيانات مواقيت الصلاة في localStorage للشاشة: ${screen.name}`);
+                    } catch (e) {
+                        console.error(`❌ فشل حفظ بيانات مواقيت الصلاة للشاشة ${screen.name}:`, e);
+                    }
+                    
+                    try {
+                        // حفظ الملفات والصور
+                        localStorage.setItem('alMoazinMediaFiles', JSON.stringify(mediaFiles));
+                        console.log(`✅ تم حفظ الملفات والصور في localStorage للشاشة: ${screen.name}`);
+                    } catch (e) {
+                        console.error(`❌ فشل حفظ الملفات للشاشة ${screen.name}:`, e);
+                    }
+                });
+                
+                // إظهار رسالة للمستخدمين
+                if (messageEl && messageEl.value) {
+                    showNotificationToUsers(messageEl.value);
+                }
+                
+                console.log(`✅ تم تطبيق الإعدادات على ${targetScreens.length} شاشة(ات) بنجاح`);
+                
+                // حفظ قائمة الشاشات في localStorage
+                try {
+                    localStorage.setItem('alMoazinScreensList', JSON.stringify(screens));
+                    console.log('✅ تم حفظ قائمة الشاشات');
+                } catch (e) {
+                    console.error('❌ فشل في حفظ قائمة الشاشات:', e);
+                }
+                
+                // إذا كان التحديث على الشاشة الحالية، قم بتحديث الواجهة
+                if (targetScreens.some(s => s.id === 'current')) {
+                    // إغلاق لوحة الإعدادات
+                    closeSettings();
+                    
+                    // إعادة تحميل الشاشة الرئيسية
+                    renderMainScreen();
+                    
+                    // جلب مواقيت جديدة إذا تغير الموقع
+                    if (countryEl && cityEl && 
+                        (state.settings.country !== countryEl.value || state.settings.city !== cityEl.value)) {
+                        console.log('📍 تغير الموقع - جلب مواقيت جديدة');
+                        fetchPrayerTimesAndWeather(true);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ خطأ في تطبيق الإعدادات عن بعد:', error);
+                
+                // إظهار رسالة خطأ للمستخدم
+                const errorMessage = error.message || 'حدث خطأ غير معروف أثناء تطبيق الإعدادات';
+                showNotification(errorMessage, 'error');
+                
+                // إظهار رسالة تحذيرية إضافية في وحدة التحكم
+                console.warn('تفاصيل الخطأ:', error);
+            }
+        }
+        
+        // دالة لإظهار إشعار للمستخدمين
+        function showNotificationToUsers(message) {
+            // إنشاء عنصر الإشعار
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-500';
+            notification.textContent = message;
+            
+            // إضافة الإشعار إلى الصفحة
+            document.body.appendChild(notification);
+            
+            // جعل الإشعار يظهر تدريجياً
+            setTimeout(() => {
+                notification.style.opacity = '1';
+            }, 10);
+            
+            // إخفاء الإشعار بعد 5 ثوانٍ
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 500);
+            }, 5000);
+        }
+
         function updateVolume(value) {
             state.settings.volume = parseFloat(value);
             state.settings.isMuted = value == 0;
@@ -2213,10 +3370,26 @@
                 const mosqueNameEl = document.getElementById('mosque-name');
                 const countryEl = document.getElementById('country');
                 const cityEl = document.getElementById('city');
+                const neighborhoodEl = document.getElementById('neighborhood');
+                const streetEl = document.getElementById('street');
+                const dstAdjustmentEl = document.getElementById('dst-adjustment');
                 
                 if (mosqueNameEl) state.settings.mosqueName = mosqueNameEl.value;
                 if (countryEl) state.settings.country = countryEl.value;
                 if (cityEl) state.settings.city = cityEl.value;
+                if (neighborhoodEl) state.settings.neighborhood = neighborhoodEl.value;
+                if (streetEl) state.settings.street = streetEl.value;
+                if (dstAdjustmentEl) {
+                    const dstValue = parseInt(dstAdjustmentEl.value) || 0;
+                    // التعامل مع قيمة "1" كتعديل تلقائي
+                    if (dstValue === 1) {
+                        // قم بتطبيق التعديل التلقائي مباشرة
+                        updateDSTBasedOnDate();
+                        state.settings.dstAdjustment = dstValue; // حفظ القيمة 1 للإشارة إلى التعديل التلقائي
+                    } else {
+                        state.settings.dstAdjustment = dstValue;
+                    }
+                }
                 
                 // Display
                 const timeFormatEl = document.getElementById('time-format');
@@ -2233,8 +3406,22 @@
                 const shuruqOffsetEl = document.getElementById('shuruq-offset');
                 const jumuahOffsetEl = document.getElementById('jumuah-offset');
                 
-                if (shuruqTimeEl) state.settings.shuruqTime = shuruqTimeEl.value;
-                if (jumuahTimeEl) state.settings.jumuahTime = jumuahTimeEl.value;
+                if (!state.settings.manualPrayers) {
+                    state.settings.manualPrayers = {};
+                }
+
+                if (shuruqTimeEl) {
+                    if (state.settings.shuruqTime !== shuruqTimeEl.value) {
+                        state.settings.shuruqTime = shuruqTimeEl.value;
+                        state.settings.manualPrayers['shuruq'] = true;
+                    }
+                }
+                if (jumuahTimeEl) {
+                    if (state.settings.jumuahTime !== jumuahTimeEl.value) {
+                        state.settings.jumuahTime = jumuahTimeEl.value;
+                        state.settings.manualPrayers['jumuah'] = true;
+                    }
+                }
                 if (shuruqOffsetEl) state.settings.shuruqOffset = parseInt(shuruqOffsetEl.value) || 0;
                 if (jumuahOffsetEl) state.settings.jumuahOffset = parseInt(jumuahOffsetEl.value) || 0;
                 
@@ -2244,12 +3431,22 @@
                     const offsetEl = document.getElementById(`prayer-offset-${prayer}`);
                     if (prayerEl) {
                         const newTime = prayerEl.value;
-                        state.settings.prayerTimes[prayer] = newTime;
-                        console.log(`📝 حفظ وقت صلاة ${prayerNames[prayer]}: ${newTime}`);
+                        if (state.settings.prayerTimes[prayer] !== newTime) {
+                            state.settings.prayerTimes[prayer] = newTime;
+                            state.settings.manualPrayers[prayer] = true;
+                            console.log(`📝 حفظ وقت صلاة ${prayerNames[prayer]}: ${newTime} (يدوي)`);
+                        }
                     }
                     if (iqamaEl) state.settings.iqamaCountdown[prayer] = parseInt(iqamaEl.value) || 0;
-                    if (offsetEl) state.settings.prayerTimeOffsets[prayer] = parseInt(offsetEl.value) || 0;
+                    if (offsetEl) {
+                        const offsetValue = parseInt(offsetEl.value) || 0;
+                        state.settings.prayerTimeOffsets[prayer] = offsetValue;
+                        console.log(`📝 حفظ تعديل وقت صلاة ${prayerNames[prayer]}: ${offsetValue} دقيقة`);
+                    }
                 });
+                
+                // حفظ التعديلات الفورية على مواقيت الصلاة
+                savePrayerTimesData();
                 
                 console.log('📋 أوقات الصلاة المحفوظة:', state.settings.prayerTimes);
                 
@@ -2327,6 +3524,9 @@
                     mosqueName: state.settings.mosqueName,
                     timeFormat: state.settings.timeFormat,
                     iqamaCountdown: state.settings.iqamaCountdown,
+                    prayerTimeOffsets: state.settings.prayerTimeOffsets,
+                    shuruqOffset: state.settings.shuruqOffset,
+                    jumuahOffset: state.settings.jumuahOffset,
                     dimDuration: state.settings.dimDuration,
                     adhanDurationMinutes: state.settings.adhanDurationMinutes,
                     adhanDurationSeconds: state.settings.adhanDurationSeconds,
@@ -2336,6 +3536,8 @@
                     azkarDurationSeconds: state.settings.azkarDurationSeconds,
                     country: state.settings.country,
                     city: state.settings.city,
+                    neighborhood: state.settings.neighborhood || '',
+                    street: state.settings.street || '',
                     showWeather: state.settings.showWeather,
                     temperature: state.settings.temperature,
                     volume: state.settings.volume,
@@ -2399,12 +3601,21 @@
                 closeSettings();
                 renderMainScreen();
                 
-                // Fetch new prayer times if location changed
+                // تحديث حالة التحكم عن بعد إذا كانت مفعلة
+                if (remoteControl) {
+                    remoteControl.updateDeviceStatus(state.settings);
+                }
+                
+                // Fetch new prayer times if location changed or apply offsets
                 const newCountry = state.settings.country;
                 const newCity = state.settings.city;
                 if (oldCountry !== newCountry || oldCity !== newCity) {
                     console.log('📍 تغير الموقع - جلب مواقيت جديدة');
                     fetchPrayerTimesAndWeather(true);
+                } else {
+                    // تحديث المواقيت لتطبيق أي تعديلات يدوية (offsets) جديدة
+                    console.log('🔄 تحديث المواقيت لتطبيق التعديلات اليدوية');
+                    fetchPrayerTimesAndWeather(false);
                 }
             } catch (error) {
                 console.error('❌ خطأ في حفظ الإعدادات:', error);
@@ -2439,19 +3650,20 @@
                     const isDataFresh = fetchAge < maxAge;
                     
                     if (isToday && isSameLocation && isDataFresh && times) {
+                        const dst = state.settings.dstAdjustment || 0;
                         const offsets = state.settings.prayerTimeOffsets || { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
                         const adjustedTimes = {
-                            fajr: applyOffsetToTime(times.fajr, offsets.fajr),
-                            dhuhr: applyOffsetToTime(times.dhuhr, offsets.dhuhr),
-                            asr: applyOffsetToTime(times.asr, offsets.asr),
-                            maghrib: applyOffsetToTime(times.maghrib, offsets.maghrib),
-                            isha: applyOffsetToTime(times.isha, offsets.isha),
+                            fajr: applyOffsetToTime(times.fajr, offsets.fajr + dst),
+                            dhuhr: applyOffsetToTime(times.dhuhr, offsets.dhuhr + dst),
+                            asr: applyOffsetToTime(times.asr, offsets.asr + dst),
+                            maghrib: applyOffsetToTime(times.maghrib, offsets.maghrib + dst),
+                            isha: applyOffsetToTime(times.isha, offsets.isha + dst),
                         };
-                        const adjustedShuruq = applyOffsetToTime(shuruq, state.settings.shuruqOffset || 0);
+                        const adjustedShuruq = applyOffsetToTime(shuruq, (state.settings.shuruqOffset || 0) + dst);
                         
                         state.settings.prayerTimes = adjustedTimes;
                         state.settings.shuruqTime = adjustedShuruq;
-                        state.settings.jumuahTime = adjustedTimes.dhuhr;
+                        state.settings.jumuahTime = applyOffsetToTime(adjustedTimes.dhuhr, state.settings.jumuahOffset || 0);
                         useCachedData = true;
                     }
                 } catch (e) {
@@ -2475,7 +3687,14 @@
                     method: String(method),
                 });
                 if (timezonestring) params.append('timezonestring', timezonestring);
-                const url = `https://api.aladhan.com/v1/timingsByCity?${params.toString()}`;
+                
+                const d = state.currentTime;
+                const dd = String(d.getDate()).padStart(2, '0');
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const yyyy = d.getFullYear();
+                const dateStr = `${dd}-${mm}-${yyyy}`;
+                
+                const url = `https://api.aladhan.com/v1/timingsByCity/${dateStr}?${params.toString()}`;
                 const resp = await fetch(url);
                 if (!resp.ok) throw new Error(`Aladhan HTTP ${resp.status}`);
                 const data = await resp.json();
@@ -2490,15 +3709,21 @@
                     isha: normalize(t.Isha),
                 };
                 const baseShuruq = normalize(t.Sunrise);
+                // التعامل مع التعديل التلقائي
+                let dst = state.settings.dstAdjustment || 0;
+                if (dst === 1) {
+                    // إذا كان التعديل التلقائي مفعل، احسب القيمة الحالية
+                    dst = getAutomaticDSTAdjustment(state.settings.country || 'الأردن');
+                }
                 const offsets = state.settings.prayerTimeOffsets || { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
                 const newPrayerTimes = {
-                    fajr: applyOffsetToTime(basePrayerTimes.fajr, offsets.fajr),
-                    dhuhr: applyOffsetToTime(basePrayerTimes.dhuhr, offsets.dhuhr),
-                    asr: applyOffsetToTime(basePrayerTimes.asr, offsets.asr),
-                    maghrib: applyOffsetToTime(basePrayerTimes.maghrib, offsets.maghrib),
-                    isha: applyOffsetToTime(basePrayerTimes.isha, offsets.isha),
+                    fajr: applyOffsetToTime(basePrayerTimes.fajr, offsets.fajr + dst),
+                    dhuhr: applyOffsetToTime(basePrayerTimes.dhuhr, offsets.dhuhr + dst),
+                    asr: applyOffsetToTime(basePrayerTimes.asr, offsets.asr + dst),
+                    maghrib: applyOffsetToTime(basePrayerTimes.maghrib, offsets.maghrib + dst),
+                    isha: applyOffsetToTime(basePrayerTimes.isha, offsets.isha + dst),
                 };
-                const newShuruq = applyOffsetToTime(baseShuruq, state.settings.shuruqOffset || 0);
+                const newShuruq = applyOffsetToTime(baseShuruq, (state.settings.shuruqOffset || 0) + dst);
                 
                 state.settings.prayerTimes = newPrayerTimes;
                 state.settings.shuruqTime = newShuruq;
@@ -2695,6 +3920,91 @@
         window.fetchPrayerTimes = fetchPrayerTimes;
         window.testAdhan = testAdhan;
         window.showCurrentPrayerTimes = showCurrentPrayerTimes;
+        window.adjustPrayerTime = adjustPrayerTime;
+        window.savePrayerOffset = savePrayerOffset;
+        window.savePrayerTimesData = savePrayerTimesData;
+        
+        // ==================== PRAYER TIME ADJUSTMENT FUNCTIONS ====================
+        // دالة لتعديل وقت الصلاة
+        function adjustPrayerTime(prayer, direction) {
+            const prayerEl = document.getElementById(`prayer-${prayer}`);
+            if (!prayerEl) return;
+            
+            const currentTime = prayerEl.value.split(':');
+            let hours = parseInt(currentTime[0]);
+            let minutes = parseInt(currentTime[1]);
+            
+            // تعديل الدقائق أولاً
+            minutes += direction;
+            
+            // إذا تجاوزت الدقائق 60 أو أصبحت سالبة، قم بالتعديل على الساعات
+            if (minutes >= 60) {
+                hours += 1;
+                minutes -= 60;
+            } else if (minutes < 0) {
+                hours -= 1;
+                minutes += 60;
+            }
+            
+            // التأكد من أن الساعات ضمن النطاق 0-23
+            if (hours >= 24) hours = 0;
+            if (hours < 0) hours = 23;
+            
+            // تحديث قيمة حقل الوقت
+            prayerEl.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            
+            // حفظ التعديل فوراً
+            savePrayerOffset(prayer);
+        }
+        
+        // دالة لحفظ تعديل وقت الصلاة
+        function savePrayerOffset(prayer) {
+            const prayerEl = document.getElementById(`prayer-${prayer}`);
+            const offsetEl = document.getElementById(`prayer-offset-${prayer}`);
+            
+            if (!prayerEl || !offsetEl) return;
+            
+            // التأكد من تهيئة manualPrayers
+            if (!state.settings.manualPrayers) {
+                state.settings.manualPrayers = {};
+            }
+            
+            // حفظ وقت الصلاة الجديد وتحديده كيدوي
+            state.settings.prayerTimes[prayer] = prayerEl.value;
+            state.settings.manualPrayers[prayer] = true;
+            
+            // حفظ قيمة التعديل
+            const offsetValue = parseInt(offsetEl.value) || 0;
+            state.settings.prayerTimeOffsets[prayer] = offsetValue;
+            
+            console.log(`📝 حفظ تعديل وقت صلاة ${prayerNames[prayer]}: ${prayerEl.value} (يدوي)`);
+            
+            // حفظ البيانات فوراً في localStorage
+            savePrayerTimesData();
+            
+            // تحديث الشاشة لعرض التعديلات
+            renderMainScreen();
+        }
+        
+        // دالة لحفظ بيانات مواقيت الصلاة
+        function savePrayerTimesData() {
+            try {
+                const prayerTimesData = {
+                    prayerTimes: state.settings.prayerTimes,
+                    prayerTimeOffsets: state.settings.prayerTimeOffsets,
+                    shuruqTime: state.settings.shuruqTime,
+                    shuruqOffset: state.settings.shuruqOffset,
+                    jumuahTime: state.settings.jumuahTime,
+                    jumuahOffset: state.settings.jumuahOffset,
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                localStorage.setItem('alMoazinPrayerTimesData', JSON.stringify(prayerTimesData));
+                console.log('✅ تم حفظ بيانات مواقيت الصلاة فوراً');
+            } catch (e) {
+                console.error('❌ فشل حفظ بيانات مواقيت الصلاة:', e);
+            }
+        }
         
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
@@ -2702,6 +4012,48 @@
         } else {
             init();
         }
+        
+        // Register Service Worker for PWA
+        let deferredPrompt;
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed', err));
+            });
+        }
+
+        // Logic for Install Button
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // منع ظهور الرسالة التلقائية
+            e.preventDefault();
+            // حفظ الحدث لاستخدامه لاحقاً
+            deferredPrompt = e;
+            // إظهار حاوية الزر
+            const installBtnContainer = document.getElementById('install-button-container');
+            if (installBtnContainer) {
+                installBtnContainer.classList.remove('hidden');
+            }
+        });
+
+        // تنفيذ عملية التثبيت عند الضغط على الزر
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#install-pwa-btn')) {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        }
+                        deferredPrompt = null;
+                        const installBtnContainer = document.getElementById('install-button-container');
+                        if (installBtnContainer) {
+                            installBtnContainer.classList.add('hidden');
+                        }
+                    });
+                }
+            }
+        });
     </script>
 </body>
 </html>
