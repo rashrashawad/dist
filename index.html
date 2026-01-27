@@ -3,10 +3,14 @@
 <html lang="ar" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Al-Moazin Digital Clock - ساعة المؤذن</title>
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1b1e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ساعة المؤذن">
     <link rel="apple-touch-icon" href="backgrounds/150.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,6 +54,14 @@
             --input: 220 15% 30%;
             --ring: 43 74% 49%;
             --radius: 0.5rem;
+        }
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            position: fixed;
         }
         body {
             font-family: 'Literata', serif;
@@ -199,6 +211,26 @@
     <script src="remoteControl.js"></script>
 
     <script>
+        // نظام الحماية من الصفحة البيضاء
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.inset = '0';
+            errorDiv.style.background = '#1a1b1e';
+            errorDiv.style.color = 'white';
+            errorDiv.style.padding = '20px';
+            errorDiv.style.zIndex = '9999';
+            errorDiv.style.direction = 'ltr';
+            errorDiv.innerHTML = `
+                <h2 style="color: #fbbf24">Application Error</h2>
+                <p><strong>Message:</strong> ${msg}</p>
+                <p><strong>Location:</strong> ${url}:${lineNo}</p>
+                <button onclick="location.reload()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer">Retry</button>
+            `;
+            document.body.appendChild(errorDiv);
+            return false;
+        };
+
         // ==================== CONSTANTS ====================
         const prayerNames = {
             fajr: 'الفجر',
@@ -363,10 +395,10 @@
                 const m = countryInfo.cities[city];
                 return {
                     apiCountry: countryInfo.apiCountry,
-                    apiCity: m?.apiCity ?? city,
+                    apiCity: (m && m.apiCity) ? m.apiCity : city,
                     method: countryInfo.method,
                     timeZone: countryInfo.timeZone,
-                    coords: m?.coords ?? [0, 0]
+                    coords: (m && m.coords) ? m.coords : [0, 0]
                 };
             }
 
@@ -435,34 +467,12 @@
             
             // تحديد فترات التوقيت الصيفي والشتوي حسب الدولة
             if (country === 'الأردن' || country === 'فلسطين' || country ==='لبنان' || country ==='سوريا') {
-                // الأردن وفلسطين وسوريا ولبنان: التوقيت الصيفي من آخر أربعاء في مارس إلى آخر أربعاء في أكتوبر
-                if (month > 3 && month < 10) return 60; // +1 ساعة (توقيت صيفي)
-                if (month === 3) {
-                    // آخر أربعاء في مارس
-                    const lastWednesday = getLastWednesdayOfMonth(3, date.getFullYear());
-                    return (day > lastWednesday || (day === lastWednesday && date.getHours() >= 0)) ? 60 : 0;
-                }
-                if (month === 10) {
-                    // آخر أربعاء في أكتوبر
-                    const lastWednesday = getLastWednesdayOfMonth(10, date.getFullYear());
-                    return (day < lastWednesday || (day === lastWednesday && date.getHours() < 0)) ? 60 : 0;
-                }
-                return 0; // التوقيت العادي (شتوي)
+                // الأردن وفلسطين وسوريا ولبنان: ألغوا التوقيت الصيفي في 2023
+                return 0;
             }
             else if (country === 'مصر') {
-                // مصر: التوقيت الصيفي من آخر أربعاء في أبريل إلى آخر أربعاء في سبتمبر
-                if (month > 4 && month < 9) return 60; // +1 ساعة (توقيت صيفي)
-                if (month === 4) {
-                    // آخر أربعاء في أبريل
-                    const lastWednesday = getLastWednesdayOfMonth(4, date.getFullYear());
-                    return (day > lastWednesday || (day === lastWednesday && date.getHours() >= 0)) ? 60 : 0;
-                }
-                if (month === 9) {
-                    // آخر أربعاء في سبتمبر
-                    const lastWednesday = getLastWednesdayOfMonth(9, date.getFullYear());
-                    return (day < lastWednesday || (day === lastWednesday && date.getHours() < 0)) ? 60 : 0;
-                }
-                return 0; // التوقيت العادي (شتوي)
+                // مصر: ألغت التوقيت الصيفي في 2023
+                return 0;
             }
             else if (country === 'السعودية' || country === 'الكويت' || country ==='البحرين' || country ==='قطر' || country ==='الإمارات العربية المتحدة' || country ==='عمان') {
                 // دول الخليج: لا توجد فترة توقيت صيفي officially
@@ -471,21 +481,6 @@
             // باقي الدول: افتراضياً من مارس إلى أكتوبر
             if (month > 2 && month < 11) return 60; // +1 ساعة (توقيت صيفي)
             return 0; // التوقيت العادي (شتوي)
-        }
-        
-        // دالة مساعدة للحصول على آخر أربعاء في الشهر المحدد
-        function getLastWednesdayOfMonth(month, year) {
-            const date = new Date(year, month, 0); // آخر يوم في الشهر
-            const day = date.getDate();
-            const dayOfWeek = date.getDay(); // 0 (الأحد) إلى 6 (السبت)
-            
-            // الأربعاء هو اليوم 3
-            let lastWednesday = day - (dayOfWeek - 3 + 7) % 7;
-            if (lastWednesday < 1) {
-                // إذا كان يقع في الشهر السابق، احسبه من الأسبوع السابق
-                lastWednesday += 7;
-            }
-            return lastWednesday;
         }
         
         // دالة لتحديث التوقيت تلقائياً بناءً على التاريخ
@@ -551,9 +546,9 @@
 
         async function fetchAndCacheAnnualPrayerTimes(country, city, year) {
             const mapping = resolveLocationMapping(country, city);
-            const method = mapping.method ?? 23; 
-            const countryParam = mapping.apiCountry ?? country;
-            const cityParam = mapping.apiCity ?? city;
+            const method = (mapping.method !== undefined && mapping.method !== null) ? mapping.method : 23; 
+            const countryParam = mapping.apiCountry || country;
+            const cityParam = mapping.apiCity || city;
 
             const params = new URLSearchParams({
                 city: cityParam,
@@ -622,10 +617,10 @@
                 
                 try {
                     const mapping = resolveLocationMapping(country, city);
-                    const method = mapping.method ?? 23;
+                    const method = (mapping.method !== undefined && mapping.method !== null) ? mapping.method : 23;
                     const tz = mapping.timeZone;
-                    const countryParam = mapping.apiCountry ?? country;
-                    const cityParam = mapping.apiCity ?? city;
+                    const countryParam = mapping.apiCountry || country;
+                    const cityParam = mapping.apiCity || city;
         
                     const params = new URLSearchParams({
                         city: cityParam,
@@ -719,6 +714,30 @@
                         isha: '21:22',
                     };
                 }
+            }
+        }
+
+        // ==================== FETCH TEMPERATURE FUNCTION ====================
+        async function fetchTemperature(country, city) {
+            try {
+                const mapping = resolveLocationMapping(country, city);
+                const apiCity = mapping.apiCity || city;
+
+                // استخدام wttr.in API (لا يحتاج مفتاح API)
+                const url = `https://wttr.in/${apiCity}?format=j1`;
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch temperature: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const temp = Math.round(data.current_condition[0].temp_C);
+                console.log(`✅ تم جلب درجة الحرارة: ${temp}°C لمدينة ${city}`);
+                return temp;
+            } catch (error) {
+                console.error('❌ فشل في جلب درجة الحرارة:', error);
+                return 25; // قيمة افتراضية في حالة الفشل
             }
         }
 
@@ -864,6 +883,10 @@
                 }
                 
                 console.log('✅ تم استرداد مواقيت الصلاة بنجاح:', newTimes);
+                
+                // جلب درجة الحرارة اليومية
+                const currentTemp = await fetchTemperature(settings.country, settings.city);
+                settings.temperature = currentTemp;
                 
                 // Apply DST adjustment and manual offsets
                 const dst = settings.dstAdjustment || 0;
@@ -2205,7 +2228,6 @@
                             <p class="text-4xl mt-8">📵</p>
                         </div>` : ''
                     }
-                    }
                 </div>
             `;
         }
@@ -2459,11 +2481,25 @@
             content.innerHTML = `
                 <div class="space-y-6">
                     <!-- PWA Install Button -->
-                    <div id="install-button-container" class="hidden border-b pb-4">
+                    <div id="install-button-container" class="${deferredPrompt ? '' : 'hidden'} border-b pb-4">
                         <button id="install-pwa-btn" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-colors">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                             تثبيت التطبيق على الجهاز
                         </button>
+                    </div>
+
+                    <!-- Manual Install Guide -->
+                    <div class="border-b pb-4">
+                        <h3 class="text-sm font-semibold mb-2 text-accent cursor-pointer" onclick="toggleAccordion('install-guide')">كيفية التثبيت على TV BOX أو الهاتف (يدوياً) ▼</h3>
+                        <div id="accordion-install-guide" class="accordion-content text-xs space-y-2 text-muted-foreground">
+                            <p>1. افتح التطبيق في متصفح Chrome.</p>
+                            <p>2. اضغط على النقاط الثلاث (القائمة) في الزاوية.</p>
+                            <p>3. اختر <b>"الإضافة إلى الشاشة الرئيسية"</b> أو <b>"تثبيت التطبيق"</b>.</p>
+                            <p>4. سيظهر التطبيق كأيقونة على جهازك ويعمل بشكل كامل.</p>
+                            <div id="file-protocol-warning" class="hidden p-2 bg-red-900/30 border border-red-500 rounded text-red-200 mt-2">
+                                ⚠️ تنبيه: أنت تفتح التطبيق كملف محلي. التثبيت يتطلب تشغيل التطبيق عبر إنترنت (Firebase) أو خادم محلي.
+                            </div>
+                        </div>
                     </div>
 
                     <!-- General Settings -->
@@ -2863,7 +2899,7 @@
                 const file = input.files[0];
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    if (event.target?.result) {
+                    if (event.target && event.target.result) {
                         state.settings[settingKey] = event.target.result;
                         console.log(`✅ تم تحميل الملف: ${settingKey}`, {
                             fileSize: file.size,
@@ -3679,7 +3715,7 @@
             
             try {
                 const locationMapping = resolveLocationMapping(state.settings.country, state.settings.city);
-                const method = locationMapping.method ?? 23;
+                const method = (locationMapping.method !== undefined && locationMapping.method !== null) ? locationMapping.method : 23;
                 const timezonestring = locationMapping.timeZone;
                 const params = new URLSearchParams({
                     city: locationMapping.apiCity || state.settings.city,
@@ -3698,7 +3734,7 @@
                 const resp = await fetch(url);
                 if (!resp.ok) throw new Error(`Aladhan HTTP ${resp.status}`);
                 const data = await resp.json();
-                if (data.code !== 200 || !data.data?.timings) throw new Error('Invalid Aladhan response');
+                if (data.code !== 200 || !data.data || !data.data.timings) throw new Error('Invalid Aladhan response');
                 const t = data.data.timings;
                 const normalize = (v) => (v ? String(v).split(' ')[0] : '');
                 const basePrayerTimes = {
@@ -4008,9 +4044,20 @@
         
         // Initialize when DOM is ready
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
+            document.addEventListener('DOMContentLoaded', () => {
+                init();
+                checkFileProtocol();
+            });
         } else {
             init();
+            checkFileProtocol();
+        }
+
+        function checkFileProtocol() {
+            if (window.location.protocol === 'file:') {
+                const warning = document.getElementById('file-protocol-warning');
+                if (warning) warning.classList.remove('hidden');
+            }
         }
         
         // Register Service Worker for PWA
@@ -4053,6 +4100,12 @@
                     });
                 }
             }
+        });
+
+        // جلب درجة الحرارة الأولية عند بدء التطبيق
+        fetchTemperature(state.settings.country, state.settings.city).then(temp => {
+            state.settings.temperature = temp;
+            renderMainScreen();
         });
     </script>
 </body>
