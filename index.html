@@ -62,11 +62,30 @@
             overflow: hidden;
             width: 100%;
             position: fixed;
+            background-color: #1a1b1e; /* لون خلفية افتراضي لمنع الشاشة البيضاء */
         }
         body {
             font-family: 'Literata', serif;
             background-color: hsl(var(--background));
             color: hsl(var(--foreground));
+            /* تحسين الأداء لأجهزة التلفاز */
+            -webkit-font-smoothing: antialiased;
+            transform: translateZ(0); 
+            padding: 2vh 2vw; /* مساحة أمان لأطراف التلفاز (Overscan) */
+            box-sizing: border-box;
+        }
+        /* إخفاء المحتوى حتى يكتمل التحميل */
+        #app-container:empty::before {
+            content: "جاري التحميل...";
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #fbbf24;
+            background: #1a1b1e;
+            z-index: 100;
         }
         .accordion-content {
             max-height: 0;
@@ -186,6 +205,13 @@
 <body class="font-sans antialiased">
     <audio id="audioRef" class="hidden"></audio>
     
+    <!-- Splash Screen -->
+    <div id="app-splash" style="position: fixed; inset: 0; background: #1a1b1e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s;">
+        <div style="width: 80px; height: 80px; border: 5px solid #333; border-top: 5px solid #fbbf24; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <h1 style="color: #fbbf24; margin-top: 20px; font-size: 2rem;">ساعة المؤذن</h1>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+    </div>
+
     <!-- Main Container -->
     <div id="app-container"></div>
     
@@ -213,24 +239,40 @@
     <script>
         // نظام الحماية من الصفحة البيضاء
         window.onerror = function(msg, url, lineNo, columnNo, error) {
-            const errorDiv = document.createElement('div');
+            console.error('Global Error:', msg, url, lineNo);
+            const errorDiv = document.getElementById('error-display') || document.createElement('div');
+            errorDiv.id = 'error-display';
             errorDiv.style.position = 'fixed';
             errorDiv.style.inset = '0';
             errorDiv.style.background = '#1a1b1e';
             errorDiv.style.color = 'white';
             errorDiv.style.padding = '20px';
-            errorDiv.style.zIndex = '9999';
-            errorDiv.style.direction = 'ltr';
+            errorDiv.style.zIndex = '10000';
+            errorDiv.style.display = 'flex';
+            errorDiv.style.flexDirection = 'column';
+            errorDiv.style.alignItems = 'center';
+            errorDiv.style.justifyContent = 'center';
+            errorDiv.style.textAlign = 'center';
             errorDiv.innerHTML = `
-                <h2 style="color: #fbbf24">Application Error</h2>
-                <p><strong>Message:</strong> ${msg}</p>
-                <p><strong>Location:</strong> ${url}:${lineNo}</p>
-                <button onclick="location.reload()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer">Retry</button>
+                <h2 style="color: #fbbf24; margin-bottom: 20px;">خطأ في تحميل التطبيق</h2>
+                <p dir="ltr" style="background: rgba(255,0,0,0.1); padding: 10px; border-radius: 5px;">${msg}</p>
+                <button onclick="location.reload()" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 1.2rem; cursor: pointer">إعادة المحاولة</button>
             `;
-            document.body.appendChild(errorDiv);
+            if (!document.getElementById('error-display')) document.body.appendChild(errorDiv);
             return false;
         };
 
+        // منع ظهور الشاشة البيضاء عند التأخر في التحميل
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const splash = document.getElementById('app-splash');
+                if (splash && splash.style.opacity !== '0') {
+                    splash.innerHTML += '<p style="font-size: 1rem; color: #9ca3af; margin-top: 10px;">قد يستغرق التحميل وقتاً أطول على بعض الأجهزة...</p>';
+                }
+            }, 5000);
+        });
+
+        window.appInitialized = true;
         // ==================== CONSTANTS ====================
         const prayerNames = {
             fajr: 'الفجر',
@@ -2441,6 +2483,15 @@
                     </footer>
                 </div>
             `;
+
+            // إخفاء شاشة الترحيب بعد أول عرض ناجح
+            const splash = document.getElementById('app-splash');
+            if (splash && splash.style.display !== 'none') {
+                splash.style.opacity = '0';
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 500);
+            }
         }
 
         function updateUI() {
@@ -3338,10 +3389,11 @@
         }
         
         // دالة لإظهار إشعار للمستخدمين
-        function showNotificationToUsers(message) {
+        function showNotification(message, type = 'success') {
             // إنشاء عنصر الإشعار
             const notification = document.createElement('div');
-            notification.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-500';
+            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-500 opacity-0`;
             notification.textContent = message;
             
             // إضافة الإشعار إلى الصفحة
@@ -3356,9 +3408,16 @@
             setTimeout(() => {
                 notification.style.opacity = '0';
                 setTimeout(() => {
-                    document.body.removeChild(notification);
+                    if (notification.parentNode) {
+                        document.body.removeChild(notification);
+                    }
                 }, 500);
             }, 5000);
+        }
+
+        // اسم مستعار للدالة للتوافق مع الأكواد القديمة
+        function showNotificationToUsers(message) {
+            showNotification(message, 'success');
         }
 
         function updateVolume(value) {
