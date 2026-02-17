@@ -62,30 +62,11 @@
             overflow: hidden;
             width: 100%;
             position: fixed;
-            background-color: #1a1b1e; /* لون خلفية افتراضي لمنع الشاشة البيضاء */
         }
         body {
             font-family: 'Literata', serif;
             background-color: hsl(var(--background));
             color: hsl(var(--foreground));
-            /* تحسين الأداء لأجهزة التلفاز */
-            -webkit-font-smoothing: antialiased;
-            transform: translateZ(0); 
-            padding: 2vh 2vw; /* مساحة أمان لأطراف التلفاز (Overscan) */
-            box-sizing: border-box;
-        }
-        /* إخفاء المحتوى حتى يكتمل التحميل */
-        #app-container:empty::before {
-            content: "جاري التحميل...";
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            color: #fbbf24;
-            background: #1a1b1e;
-            z-index: 100;
         }
         .accordion-content {
             max-height: 0;
@@ -205,13 +186,6 @@
 <body class="font-sans antialiased">
     <audio id="audioRef" class="hidden"></audio>
     
-    <!-- Splash Screen -->
-    <div id="app-splash" style="position: fixed; inset: 0; background: #1a1b1e; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.5s;">
-        <div style="width: 80px; height: 80px; border: 5px solid #333; border-top: 5px solid #fbbf24; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <h1 style="color: #fbbf24; margin-top: 20px; font-size: 2rem;">ساعة المؤذن</h1>
-        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-    </div>
-
     <!-- Main Container -->
     <div id="app-container"></div>
     
@@ -239,40 +213,24 @@
     <script>
         // نظام الحماية من الصفحة البيضاء
         window.onerror = function(msg, url, lineNo, columnNo, error) {
-            console.error('Global Error:', msg, url, lineNo);
-            const errorDiv = document.getElementById('error-display') || document.createElement('div');
-            errorDiv.id = 'error-display';
+            const errorDiv = document.createElement('div');
             errorDiv.style.position = 'fixed';
             errorDiv.style.inset = '0';
             errorDiv.style.background = '#1a1b1e';
             errorDiv.style.color = 'white';
             errorDiv.style.padding = '20px';
-            errorDiv.style.zIndex = '10000';
-            errorDiv.style.display = 'flex';
-            errorDiv.style.flexDirection = 'column';
-            errorDiv.style.alignItems = 'center';
-            errorDiv.style.justifyContent = 'center';
-            errorDiv.style.textAlign = 'center';
+            errorDiv.style.zIndex = '9999';
+            errorDiv.style.direction = 'ltr';
             errorDiv.innerHTML = `
-                <h2 style="color: #fbbf24; margin-bottom: 20px;">خطأ في تحميل التطبيق</h2>
-                <p dir="ltr" style="background: rgba(255,0,0,0.1); padding: 10px; border-radius: 5px;">${msg}</p>
-                <button onclick="location.reload()" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 1.2rem; cursor: pointer">إعادة المحاولة</button>
+                <h2 style="color: #fbbf24">Application Error</h2>
+                <p><strong>Message:</strong> ${msg}</p>
+                <p><strong>Location:</strong> ${url}:${lineNo}</p>
+                <button onclick="location.reload()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer">Retry</button>
             `;
-            if (!document.getElementById('error-display')) document.body.appendChild(errorDiv);
+            document.body.appendChild(errorDiv);
             return false;
         };
 
-        // منع ظهور الشاشة البيضاء عند التأخر في التحميل
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                const splash = document.getElementById('app-splash');
-                if (splash && splash.style.opacity !== '0') {
-                    splash.innerHTML += '<p style="font-size: 1rem; color: #9ca3af; margin-top: 10px;">قد يستغرق التحميل وقتاً أطول على بعض الأجهزة...</p>';
-                }
-            }, 5000);
-        });
-
-        window.appInitialized = true;
         // ==================== CONSTANTS ====================
         const prayerNames = {
             fajr: 'الفجر',
@@ -341,6 +299,56 @@
             'ماليزيا': ['كوالالمبور', 'جورج تاون', 'جوهور باهرو']
         };
 
+        // خريطة فروق التوقيت لجميع الدول (UTC offset بالساعات)
+        const countryUTCOffsets = {
+            'الأردن': 3,      // UTC+3 (تم إلغاء التوقيت الصيفي)
+            'السعودية': 3,    // UTC+3
+            'مصر': 2,         // UTC+2
+            'الإمارات العربية المتحدة': 4, // UTC+4
+            'قطر': 3,         // UTC+3
+            'البحرين': 3,     // UTC+3
+            'الكويت': 3,      // UTC+3
+            'عمان': 4,        // UTC+4
+            'العراق': 3,      // UTC+3
+            'سوريا': 3,       // UTC+3 (تم إلغاء التوقيت الصيفي)
+            'لبنان': 2,       // UTC+2
+            'فلسطين': 2,      // UTC+2
+            'اليمن': 3,       // UTC+3
+            'ليبيا': 2,       // UTC+2
+            'تونس': 1,       // UTC+1
+            'الجزائر': 1,     // UTC+1
+            'المغرب': 1,      // UTC+1
+            'السودان': 2,     // UTC+2
+            'تركيا': 3,       // UTC+3
+            'باكستان': 5,     // UTC+5
+            'إندونيسيا': 7,   // UTC+7 (جاكرتا)
+            'ماليزيا': 8,     // UTC+8
+        };
+        
+        // دالة للحصول على فرق التوقيت لأي دولة
+        function getCountryUTCOffset(country) {
+            const normalized = (country || '').trim();
+            // البحث في الخريطة مباشرة
+            if (countryUTCOffsets[normalized] !== undefined) {
+                return countryUTCOffsets[normalized];
+            }
+            // البحث بالمطابقة الجزئية
+            const lowerCountry = normalized.toLowerCase();
+            for (const [key, offset] of Object.entries(countryUTCOffsets)) {
+                if (lowerCountry.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerCountry)) {
+                    return offset;
+                }
+            }
+            // افتراضي: UTC+3
+            return 3;
+        }
+        
+        // دالة لحساب الوقت الصحيح لأي دولة
+        function getCorrectTimeForCountry(country) {
+            // المطلوب: مطابقة وقت الكمبيوتر 100% بدون أي تحويل إضافي
+            return new Date();
+        }
+
         function resolveLocationMapping(countryAr, cityAr) {
             const normalize = (s) => (s || '').trim();
             const c = normalize(countryAr);
@@ -351,6 +359,7 @@
                     apiCountry: 'Jordan',
                     method: 23,
                     timeZone: 'Asia/Amman',
+                    utcOffset: 3,
                     cities: {
                         'عمان': { apiCity: 'Amman', coords: [31.9454, 35.9284] },
                         'الزرقاء': { apiCity: 'Zarqa', coords: [32.0608, 36.1030] },
@@ -479,8 +488,19 @@
                 
                 const prayerTimes = new adhan.PrayerTimes(coords, date, params);
                 
-                const formatTime = (date) => {
-                    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
+                // استخدام فرق التوقيت الصحيح لكل دولة
+                const utcOffset = getCountryUTCOffset(country);
+                
+                const formatTime = (prayerDate) => {
+                    // حساب الوقت بناءً على فرق التوقيت UTC
+                    let hours = prayerDate.getUTCHours() + utcOffset;
+                    const minutes = prayerDate.getUTCMinutes();
+                    
+                    // تصحيح الساعات إذا تجاوزت 24 أو أصبحت سالبة
+                    if (hours >= 24) hours -= 24;
+                    if (hours < 0) hours += 24;
+                    
+                    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
                 };
 
                 return {
@@ -501,23 +521,35 @@
         // ==================== HELPER FUNCTIONS ====================
         // دالة للتحقق من التاريخ وتحديد ما إذا كان التوقيت الصيفي أم الشتوي
         function getAutomaticDSTAdjustment(country, date = new Date()) {
-            // التبديل التلقائي مفعل افتراضياً، يمكن تعطيله من الإعدادات
-            if (!defaultSettings.dstAutoAdjust) return 0;
-            
             const month = date.getMonth() + 1; // شهر 1-12
             const day = date.getDate();
             
+            // تطهير اسم الدولة للمقارنة بشكل أدق
+            const normalizedCountry = (country || '').trim().toLowerCase();
+            const isJordan = normalizedCountry.includes('أردن') || normalizedCountry.includes('jordan') || normalizedCountry.includes('الاردن');
+            const isPalestine = normalizedCountry.includes('فلسطين') || normalizedCountry.includes('palestine');
+            const isLebanon = normalizedCountry.includes('لبنان') || normalizedCountry.includes('lebanon');
+            const isSyria = normalizedCountry.includes('سوريا') || normalizedCountry.includes('syria');
+            const isEgypt = normalizedCountry.includes('مصر') || normalizedCountry.includes('egypt');
+            
+            const isGulf = normalizedCountry.includes('سعودية') || normalizedCountry.includes('saudi') || 
+                           normalizedCountry.includes('كويت') || normalizedCountry.includes('kuwait') || 
+                           normalizedCountry.includes('بحرين') || normalizedCountry.includes('bahrain') || 
+                           normalizedCountry.includes('قطر') || normalizedCountry.includes('qatar') || 
+                           normalizedCountry.includes('إمارات') || normalizedCountry.includes('uae') || 
+                           normalizedCountry.includes('عمان') || normalizedCountry.includes('oman');
+            
             // تحديد فترات التوقيت الصيفي والشتوي حسب الدولة
-            if (country === 'الأردن' || country === 'فلسطين' || country ==='لبنان' || country ==='سوريا') {
-                // الأردن وفلسطين وسوريا ولبنان: ألغوا التوقيت الصيفي في 2023
+            if (isJordan || isPalestine || isLebanon || isSyria) {
+                // الأردن وفلسطين وسوريا ولبنان: ألغوا التوقيت الصيفي
                 return 0;
             }
-            else if (country === 'مصر') {
-                // مصر: ألغت التوقيت الصيفي في 2023
+            else if (isEgypt) {
+                // مصر: التوقيت الصيفي (إلغاء حالياً للتأكد)
                 return 0;
             }
-            else if (country === 'السعودية' || country === 'الكويت' || country ==='البحرين' || country ==='قطر' || country ==='الإمارات العربية المتحدة' || country ==='عمان') {
-                // دول الخليج: لا توجد فترة توقيت صيفي officially
+            else if (isGulf) {
+                // دول الخليج: لا توجد فترة توقيت صيفي
                 return 0;
             }
             // باقي الدول: افتراضياً من مارس إلى أكتوبر
@@ -525,24 +557,45 @@
             return 0; // التوقيت العادي (شتوي)
         }
         
+        function getCurrentDSTOffset() {
+            const dst = state.settings.dstAdjustment || 0;
+            if (dst === 1) {
+                return getAutomaticDSTAdjustment(state.settings.country || 'الأردن', state.currentTime || new Date());
+            }
+            return dst;
+        }
+
         // دالة لتحديث التوقيت تلقائياً بناءً على التاريخ
         function updateDSTBasedOnDate() {
             const now = new Date();
             const country = state.settings.country || 'الأردن';
-            const autoAdjustment = getAutomaticDSTAdjustment(country, now);
             
-            // تحقق إذا كان التعديل التلقائي مختلفاً عن الإعداد الحالي
-            if (autoAdjustment !== state.settings.dstAdjustment && state.settings.dstAdjustment !== 1) {
-                // إذا كان المستخدم قد قام بتعديل يدوي، لا نغيره
-                return;
+            // تطهير اسم الدولة للمقارنة بشكل أدق
+            const normalizedCountry = (country || '').trim().toLowerCase();
+            const isJordan = normalizedCountry.includes('أردن') || normalizedCountry.includes('jordan') || normalizedCountry.includes('الاردن');
+            
+            const oldOffset = state.currentDSTOffset;
+            
+            if (isJordan) {
+                // للأردن: دائماً التوقيت طبيعي (Offset 0) لأن التوقيت الصيفي تم إلغاؤه نهائياً
+                state.currentDSTOffset = 0;
+                
+                // إذا كان هناك إعداد يدوي محفوظ بزيادة ساعة (+60)، نقوم بتصحيحه فوراً
+                if (state.settings.dstAdjustment === 60) {
+                    console.log('🔄 تصحيح إعداد التوقيت الصيفي القديم للأردن...');
+                    state.settings.dstAdjustment = 0;
+                    saveSettings();
+                }
+            } else if (state.settings.dstAdjustment === 1) {
+                const autoAdjustment = getAutomaticDSTAdjustment(country, now);
+                state.currentDSTOffset = autoAdjustment;
+            } else {
+                state.currentDSTOffset = state.settings.dstAdjustment || 0;
             }
             
-            // تطبيق التعديل التلقائي
-            if (autoAdjustment !== state.settings.dstAdjustment) {
-                console.log(`🔄 تغيير التوقيت التلقائي: ${autoAdjustment === 60 ? 'توقيت صيفي (+1 ساعة)' : 'توقيت شتوي (عادي)'}`);
-                state.settings.dstAdjustment = autoAdjustment;
-                
-                // تحديث أوقات الصلاة مع التعديل الجديد
+            // إذا تغير التعديل، نحدث مواقيت الصلاة
+            if (state.currentDSTOffset !== oldOffset) {
+                console.log(`🔄 تغيير التوقيت: ${state.currentDSTOffset === 60 ? 'توقيت صيفي (+1 ساعة)' : state.currentDSTOffset === -60 ? 'توقيت شتوي (-1 ساعة)' : 'توقيت عادي'}`);
                 updatePrayerTimes();
             }
         }
@@ -603,16 +656,21 @@
             const url = `https://api.aladhan.com/v1/calendarByCity?${params.toString()}`;
             console.log('Fetching annual prayer times...', url);
 
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Failed to fetch annual times: ${response.status}`);
-            
-            const json = await response.json();
-            if (json.code !== 200 || !json.data) throw new Error('Invalid annual data');
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Failed to fetch annual times: ${response.status}`);
+                
+                const json = await response.json();
+                if (json.code !== 200 || !json.data) throw new Error('Invalid annual data');
 
-            // Save to localStorage
-            const key = getCacheKey(country, city, year);
-            localStorage.setItem(key, JSON.stringify(json.data));
-            console.log('Annual prayer times cached successfully for year', year);
+                // Save to localStorage
+                const key = getCacheKey(country, city, year);
+                localStorage.setItem(key, JSON.stringify(json.data));
+                console.log('Annual prayer times cached successfully for year', year);
+            } catch (e) {
+                console.error('❌ Error in fetchAndCacheAnnualPrayerTimes:', e);
+                throw e;
+            }
         }
 
         async function fetchPrayerTimes(country, city) {
@@ -680,8 +738,9 @@
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثانية timeout
                     
+                    let response;
                     try {
-                        const response = await fetch(url, { signal: controller.signal });
+                        response = await fetch(url, { signal: controller.signal });
                         clearTimeout(timeoutId);
                         
                         if (!response.ok) {
@@ -931,7 +990,7 @@
                 settings.temperature = currentTemp;
                 
                 // Apply DST adjustment and manual offsets
-                const dst = settings.dstAdjustment || 0;
+                const dst = state.currentDSTOffset || 0;
                 const offsets = settings.prayerTimeOffsets || { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
                 
                 if (dst !== 0 || Object.values(offsets).some(v => v !== 0)) {
@@ -1115,6 +1174,7 @@
             iqamaEndTime: null,
             currentAzkarIndex: 0,
             currentTime: new Date(),
+            currentDSTOffset: 0,
             phaseTimeoutRef: null,
             azkarIntervalRef: null,
             isAdhanPlaying: false,
@@ -1343,13 +1403,39 @@
                 audioRef.muted = state.settings.isMuted;
             }
 
+            // Update DST before starting clock
+            updateDSTBasedOnDate();
+            
+            // مسح البيانات المخزنة القديمة للأردن لضمان تحديث المواقيت بشكل صحيح
+            const cacheVersion = localStorage.getItem('prayerTimesCacheVersion');
+            if (cacheVersion !== 'v2-jordan-utc3') {
+                console.log('🗑️ مسح البيانات المخزنة القديمة لتحديث التوقيت...');
+                // مسح كاش مواقيت الصلاة للأردن
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && (key.includes('prayerTimes_الأردن') || key.includes('prayerTimes_Jordan'))) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                localStorage.removeItem('alMoazinPrayerTimes');
+                localStorage.setItem('prayerTimesCacheVersion', 'v2-jordan-utc3');
+                console.log('✅ تم مسح البيانات القديمة - سيتم تحديث المواقيت');
+            }
+
             // Start clock
             setInterval(() => {
-                const now = new Date();
-                // Apply DST adjustment to current time if set
-                if (state.settings.dstAdjustment && state.settings.dstAdjustment !== 0) {
-                    now.setMinutes(now.getMinutes() + state.settings.dstAdjustment);
+                // استخدام الدالة الموحدة لحساب الوقت الصحيح لجميع الدول
+                const country = state.settings.country || 'الأردن';
+                const now = getCorrectTimeForCountry(country);
+                const normalizedCountry = (country || '').trim().toLowerCase();
+                const isJordan = normalizedCountry.includes('أردن') || normalizedCountry.includes('jordan') || normalizedCountry.includes('الاردن');
+                if (isJordan) {
+                    // تصحيح مباشر: المطابقة مع الوقت المحلي الفعلي للجهاز
+                    now.setHours(now.getHours() - 1);
                 }
+                
                 state.currentTime = now;
                 updateUI();
             }, 1000);
@@ -1554,7 +1640,7 @@
             
             // التحقق من الوقت الحالي
             const checkTime = () => {
-                const now = new Date();
+                const now = state.currentTime || new Date();
                 const currentMinutes = now.getHours() * 60 + now.getMinutes();
                 const currentSeconds = now.getSeconds();
                 
@@ -1750,7 +1836,8 @@
                 return;
             }
             
-            const now = new Date();
+            // استخدام الوقت المركزي للتطبيق بدلاً من توقيت الجهاز المباشر
+            const now = state.currentTime || new Date();
             const currentHours = now.getHours();
             const currentMinutes = now.getMinutes();
             const currentSeconds = now.getSeconds();
@@ -2483,22 +2570,11 @@
                     </footer>
                 </div>
             `;
-
-            // إخفاء شاشة الترحيب بعد أول عرض ناجح
-            const splash = document.getElementById('app-splash');
-            if (splash && splash.style.display !== 'none') {
-                splash.style.opacity = '0';
-                setTimeout(() => {
-                    splash.style.display = 'none';
-                }, 500);
-            }
         }
 
         function updateUI() {
             if (state.currentPhase === 'idle') {
                 renderMainScreen();
-                // بدء مراقبة أوقات الصلاة عند تحديث الواجهة
-                startPrayerMonitoring();
             } else if (state.currentPhase === 'iqamaCountdown') {
                 // Update countdown every second
                 const countdown = calculateIqamaCountdown();
@@ -2943,6 +3019,28 @@
             if (cities.length > 0) {
                 citySelect.value = cities[0];
             }
+            triggerImmediateLocationRefresh();
+        }
+
+        let locationRefreshTimer = null;
+        async function triggerImmediateLocationRefresh() {
+            const countryEl = document.getElementById('country');
+            const cityEl = document.getElementById('city');
+            if (!countryEl || !cityEl) return;
+
+            state.settings.country = countryEl.value;
+            state.settings.city = cityEl.value;
+            state.currentTime = getCorrectTimeForCountry(state.settings.country);
+
+            if (locationRefreshTimer) clearTimeout(locationRefreshTimer);
+            locationRefreshTimer = setTimeout(async () => {
+                try {
+                    renderMainScreen();
+                    await fetchPrayerTimesAndWeather(true); // يشمل المواقيت والحرارة
+                } catch (e) {
+                    console.error('❌ فشل التحديث الفوري للموقع:', e);
+                }
+            }, 350);
         }
 
         function handleFileChange(settingKey, input) {
@@ -3352,6 +3450,7 @@
                 }
                 
                 console.log(`✅ تم تطبيق الإعدادات على ${targetScreens.length} شاشة(ات) بنجاح`);
+                showNotification('لقد تم تحديث التغير عن بعد', 'success');
                 
                 // حفظ قائمة الشاشات في localStorage
                 try {
@@ -3392,8 +3491,12 @@
         function showNotification(message, type = 'success') {
             // إنشاء عنصر الإشعار
             const notification = document.createElement('div');
-            const bgColor = type === 'success' ? 'bg-green-600' : 'bg-red-600';
-            notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-500 opacity-0`;
+            
+            // تحديد اللون بناءً على النوع
+            const bgColor = type === 'error' ? 'bg-red-600' : 'bg-green-600';
+            
+            notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-500`;
+            notification.style.opacity = '0';
             notification.textContent = message;
             
             // إضافة الإشعار إلى الصفحة
@@ -3415,7 +3518,7 @@
             }, 5000);
         }
 
-        // اسم مستعار للدالة للتوافق مع الأكواد القديمة
+        // دالة قديمة للتوافق
         function showNotificationToUsers(message) {
             showNotification(message, 'success');
         }
@@ -3633,6 +3736,8 @@
                     city: state.settings.city,
                     neighborhood: state.settings.neighborhood || '',
                     street: state.settings.street || '',
+                    dstAdjustment: state.settings.dstAdjustment,
+                    dstAutoAdjust: state.settings.dstAutoAdjust,
                     showWeather: state.settings.showWeather,
                     temperature: state.settings.temperature,
                     volume: state.settings.volume,
@@ -3745,7 +3850,7 @@
                     const isDataFresh = fetchAge < maxAge;
                     
                     if (isToday && isSameLocation && isDataFresh && times) {
-                        const dst = state.settings.dstAdjustment || 0;
+                        const dst = state.currentDSTOffset || 0;
                         const offsets = state.settings.prayerTimeOffsets || { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
                         const adjustedTimes = {
                             fajr: applyOffsetToTime(times.fajr, offsets.fajr + dst),
@@ -3805,11 +3910,7 @@
                 };
                 const baseShuruq = normalize(t.Sunrise);
                 // التعامل مع التعديل التلقائي
-                let dst = state.settings.dstAdjustment || 0;
-                if (dst === 1) {
-                    // إذا كان التعديل التلقائي مفعل، احسب القيمة الحالية
-                    dst = getAutomaticDSTAdjustment(state.settings.country || 'الأردن');
-                }
+                const dst = state.currentDSTOffset || 0;
                 const offsets = state.settings.prayerTimeOffsets || { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
                 const newPrayerTimes = {
                     fajr: applyOffsetToTime(basePrayerTimes.fajr, offsets.fajr + dst),
@@ -3905,6 +4006,10 @@
                 }
             });
             document.getElementById('settings-overlay').addEventListener('click', closeSettings);
+            const countryEl = document.getElementById('country');
+            const cityEl = document.getElementById('city');
+            if (countryEl) countryEl.addEventListener('change', triggerImmediateLocationRefresh);
+            if (cityEl) cityEl.addEventListener('change', triggerImmediateLocationRefresh);
             
             // Audio unlock - تفعيل الصوت عند التفاعل الأول
             const audioRef = document.getElementById('audioRef');
@@ -4123,9 +4228,29 @@
         let deferredPrompt;
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(reg => console.log('Service Worker registered'))
-                    .catch(err => console.log('Service Worker registration failed', err));
+                // تنظيف قوي لمرة واحدة لضمان عدم بقاء نسخة قديمة
+                const swResetDone = localStorage.getItem('sw-hard-reset-v1');
+                const runRegister = () => {
+                    navigator.serviceWorker.register('service-worker.js?v=6', { updateViaCache: 'none' })
+                        .then(async (reg) => {
+                            try {
+                                await reg.update();
+                            } catch (e) {}
+                            console.log('Service Worker registered/updated');
+                        })
+                        .catch(err => console.log('Service Worker registration failed', err));
+                };
+                if (!swResetDone) {
+                    Promise.all([
+                        navigator.serviceWorker.getRegistrations().then(regs => Promise.all(regs.map(r => r.unregister()))),
+                        ('caches' in window) ? caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))) : Promise.resolve()
+                    ]).finally(() => {
+                        localStorage.setItem('sw-hard-reset-v1', '1');
+                        runRegister();
+                    });
+                    return;
+                }
+                runRegister();
             });
         }
 
